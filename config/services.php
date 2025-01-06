@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'ginee' => [
+        'base_url' => env('GINEE_BASE_URL'),
+        'access_key' => env('GINEE_ACCESS_KEY'),
+        'signature' => env('GINEE_SIGNATURE'),
+        'country' => env('GINEE_COUNTRY', 'ID'),
+    ],
 ];
