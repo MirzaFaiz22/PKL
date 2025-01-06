@@ -327,7 +327,6 @@ return [
             'label' => 4,
             'label_color' => 'success',
         ],
-        ['header' => 'account_settings'],
         [
             'text' => 'profile',
             'url' => 'admin/settings',
@@ -349,7 +348,7 @@ return [
                 ],
                 [
                     'text' => 'Create Product',
-                    'url' => '/createDevice',
+                    'url' => '/product/create',
                 ],
                 [
                     'text' => 'level_one',
@@ -378,22 +377,7 @@ return [
                 
             ],
         ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
-        ],
+
     ],
 
     /*

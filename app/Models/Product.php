@@ -9,33 +9,18 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'spu',
-        'fullCategoryId',
-        'saleStatus',
-        'condition',
-        'shortDescription',
-        'description',
-        'variantOptions',
-        'variations',
-        'images',
-        'delivery',
-        'type',
-        'costInfo',
-        'status',
-        'extraInfo',
-        'minPurchase',
-        'brand',
-    ];
+    // Tentukan nama tabel jika berbeda dari default (misalnya, 'produk' bukan 'products')
+    protected $table = 'produk';
 
-    protected $casts = [
-        'fullCategoryId' => 'array',
-        'variantOptions' => 'array',
-        'variations' => 'array',
-        'images' => 'array',
-        'delivery' => 'array',
-        'costInfo' => 'array',
-        'extraInfo' => 'array',
+    protected $fillable = [
+        'nama',
+        'kategori',
+        'type',
+        'harga',
+        'stok',
+        'review',
+        'terjual',
+        'competitor'
     ];
 }
+
