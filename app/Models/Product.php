@@ -9,18 +9,53 @@ class Product extends Model
 {
     use HasFactory;
 
-    // Tentukan nama tabel jika berbeda dari default (misalnya, 'produk' bukan 'products')
-    protected $table = 'produk';
-
     protected $fillable = [
-        'nama',
-        'kategori',
+        'name',
+        'spu',
+        'full_category_id',
+        'sale_status',
+        'condition',
+        'short_description',
+        'description',
+        'variant_options',
+        'variations',
+        'images',
+        'delivery',
         'type',
-        'harga',
-        'stok',
-        'review',
-        'terjual',
-        'competitor'
+        'cost_info',
+        'status',
+        'extra_info',
+        'min_purchase',
+        'brand',
     ];
-}
 
+    protected $casts = [
+        'full_category_id' => 'array',
+        'variant_options' => 'array',
+        'variations' => 'array',
+        'images' => 'array',
+        'delivery' => 'array',
+        'cost_info' => 'array',
+        'extra_info' => 'array',
+    ];
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function delivery()
+    {
+        return $this->hasOne(Delivery::class);
+    }
+
+    public function cost()
+    {
+        return $this->hasOne(Cost::class);
+    }
+
+    public function extra()
+    {
+        return $this->hasOne(ProductExtra::class);
+    }
+}

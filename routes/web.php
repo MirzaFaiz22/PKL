@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,3 +17,6 @@ Route::get('/product', [App\Http\Controllers\ProductController::class, 'index'])
 Route::get('/product/create', function () {
     return view('createDevice');
 });
+
+Route::post('/products/create', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+

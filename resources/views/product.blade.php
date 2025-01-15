@@ -9,7 +9,7 @@
             <h4 style="margin: 0; color: #343a40; font-weight: bold;">List Product</h4>
         </div>
         <div class="col-md-6 text-right">
-            <a href="/createDevice" class="btn btn-primary" style="border-radius: 8px;">Create New Devices</a>
+            <a href="/product/create" class="btn btn-primary" style="border-radius: 8px;">Create New Devices</a>
         </div>
     </div>
 @stop
