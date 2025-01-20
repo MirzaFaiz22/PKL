@@ -18,5 +18,6 @@ Route::get('/product/create', function () {
     return view('createDevice');
 });
 
-Route::post('/products/create', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+Route::post('/products/create', [ProductController::class, 'store'])->name('products.store');
+
 

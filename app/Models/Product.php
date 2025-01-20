@@ -4,58 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\VariantOption;
+use App\Models\Variation;
 
 class Product extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'name',
         'spu',
-        'full_category_id',
-        'sale_status',
-        'condition',
-        'short_description',
-        'description',
-        'variant_options',
-        'variations',
-        'images',
-        'delivery',
-        'type',
-        'cost_info',
-        'status',
-        'extra_info',
-        'min_purchase',
+        'fullCategoryId',
         'brand',
+        'saleStatus',
+        'condition',
+        'hasSelfLife',
+        'shelfLifeDuration',
+        'inboundLimit',
+        'outboundLimit',
+        'minPurchase',
+        'shortDescription',
+        'description',
+        'has_variations'
     ];
 
     protected $casts = [
-        'full_category_id' => 'array',
-        'variant_options' => 'array',
-        'variations' => 'array',
-        'images' => 'array',
-        'delivery' => 'array',
-        'cost_info' => 'array',
-        'extra_info' => 'array',
+        'fullCategoryId' => 'array',
+        'hasSelfLife' => 'boolean',
+        'has_variations' => 'boolean'
     ];
 
-    public function variants()
+    public function variationTypes()
     {
-        return $this->hasMany(ProductVariant::class);
+        return $this->hasMany(VariationType::class);
     }
 
-    public function delivery()
+    public function variations()
     {
-        return $this->hasOne(Delivery::class);
-    }
-
-    public function cost()
-    {
-        return $this->hasOne(Cost::class);
-    }
-
-    public function extra()
-    {
-        return $this->hasOne(ProductExtra::class);
+        return $this->hasMany(ProductVariation::class);
     }
 }

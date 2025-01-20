@@ -3,177 +3,230 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\Delivery;
-use App\Models\Cost;
-use App\Models\ProductExtra;
+use App\Models\Variation;
+use App\Models\VariantOption;
+use App\Models\VariationType;
+use App\Models\VariationTypeValue;
+use App\Models\ProductVariation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
-    // Menampilkan semua produk
     public function index()
     {
-        $products = Product::with(['variants', 'delivery', 'cost', 'extra'])->get();
+        $products = Product::paginate(10);
         return view('products.index', compact('products'));
     }
 
-    // Form untuk menambahkan produk baru
     public function create()
     {
-        return view('products.create');
+        return view('createDevice');
     }
 
-    // Menyimpan produk baru
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:300', // Nama produk, kurang dari 300 karakter
-            'spu' => 'required|string|unique:products|max:255', // SPU, unik, dan kurang dari 256 karakter
-            'fullCategoryId' => 'nullable|array', // ID kategori lengkap (nullable, jika status adalah REVIEW_APPROVED)
-            'saleStatus' => 'nullable|string|in:available,out_of_stock,discontinued', // Status penjualan
-            'condition' => 'required|string|in:new,used', // Kondisi produk (NEW atau USED)
-            'shortDescription' => 'nullable|string|max:3000', // Deskripsi singkat (maks 3000 karakter)
-            'description' => 'nullable|string|max:60000', // Deskripsi produk (maks 60000 karakter)
-            'variantOptions' => 'nullable|array|max:3', // Opsi varian produk, maksimal 3 varian
-            'variations' => 'required|array|max:400', // Variasi produk, maksimal 400
-            'images' => 'nullable|array', // URL gambar produk
-            'delivery' => 'nullable|array', // Informasi pengiriman
-            'type' => 'required|string|in:NORMAL,BUNDLE', // Tipe produk (NORMAL atau BUNDLE)
-            'costInfo' => 'nullable|array', // Informasi biaya produk
-            'status' => 'required|string|in:PENDING_REVIEW,PAY_NO_ATTENTION', // Status produk utama
-            'extraInfo' => 'nullable|array', // Informasi tambahan
-            'minPurchase' => 'nullable|integer|min:1|max:1000', // Pembelian minimal (antara 1 dan 1000)
-            'brand' => 'nullable|string|max:255', // Merek produk
-            'variantOptions.*.name' => 'required|string', // Nama varian seperti warna atau ukuran
-            'variantOptions.*.values' => 'required|array|min:1', // Nilai dari varian, misalnya merah, kuning
-            'variations.*.optionValues' => 'nullable|array', // Nilai varian, misalnya red code dan L code
-            'variations.*.sellingPrice.amount' => 'required|numeric|max:1000000000', // Harga jual produk
-            'variations.*.sellingPrice.currencyCode' => 'required|string', // Kode mata uang
-            'variations.*.sku' => 'required|string|max:200', // SKU produk
-            'variations.*.stock.availableStock' => 'required|integer|min:1|max:999999', // Stok yang tersedia
-            'variations.*.purchasePrice.amount' => 'nullable|numeric|max:1000000000', // Harga pembelian produk (opsional)
-            'variations.*.barcode' => 'nullable|string|max:128|regex:/^[a-zA-Z0-9-_]+$/', // Barcode produk (opsional, jika ada)
-            'delivery.length' => 'nullable|integer|min:1|max:999999', // Panjang produk pengiriman
-            'delivery.width' => 'nullable|integer|min:1|max:999999', // Lebar produk pengiriman
-            'delivery.height' => 'nullable|integer|min:1|max:999999', // Tinggi produk pengiriman
-            'delivery.weight' => 'nullable|integer|max:5000000', // Berat produk pengiriman
-            'delivery.lengthUnit' => 'nullable|string|in:cm', // Unit panjang pengiriman
-            'delivery.weightUnit' => 'nullable|string|in:g', // Unit berat pengiriman
-            'delivery.declareAmount' => 'nullable|numeric', // Jumlah deklarasi produk pengiriman
-            'costInfo.sourceUrl' => 'nullable|string|max:500', // URL sumber biaya produk
-            'costInfo.purchasingTime' => 'nullable|integer|max:365', // Waktu pembelian produk dalam hari
-            'costInfo.purchasingTimeUnit' => 'nullable|string|in:HOUR,DAY,WORK_DAY,WEEK,MONTH', // Unit waktu pembelian
-            'extraInfo.preOrder' => 'nullable|array', // Informasi pre-order produk
-            'extraInfo.hasShelfLife' => 'nullable|boolean', // Apakah produk memiliki masa simpan
-            'extraInfo.shelfLifePeriod' => 'nullable|integer', // Periode masa simpan produk
-            'extraInfo.additionInfo' => 'nullable|array', // Informasi tambahan produk
-            'extraInfo.remark1' => 'nullable|string|max:50', // Catatan tambahan (remark1)
-            'extraInfo.remark2' => 'nullable|string|max:50', // Catatan tambahan (remark2)
-            'extraInfo.remark3' => 'nullable|string|max:50', // Catatan tambahan (remark3)
-        ]);
+        DB::beginTransaction();
+        dd($request->all());
+        try {
+            // Define base validation rules
+            $rules = [
+                'name' => 'required|max:300',
+                'spu' => 'required|max:200|unique:products,spu',
+                'fullCategoryId' => 'nullable',
+                'brand' => 'nullable|max:20',
+                'saleStatus' => 'required|in:FOR_SALE,HOT_SALE,NEW_ARRIVAL,SALE_ENDED',
+                'condition' => 'required|in:NEW,USED',
+                'hasSelfLife' => 'required|in:true,false',
+                'shelfLifeDuration' => 'nullable|required_if:hasSelfLife,true|integer|min:1',
+                'inboundLimit' => 'nullable|required_if:hasSelfLife,true|integer|min:0',
+                'outboundLimit' => 'nullable|required_if:hasSelfLife,true|integer|min:0',
+                'minPurchase' => 'required|integer|min:1',
+                'shortDescription' => 'required',
+                'description' => 'required|max:7000',
+                'hasVariations' => 'boolean'
+            ];
 
-        
-        // Simpan produk utama
-        $product = Product::create($validated);
-        
-        // Menyimpan relasi tambahan jika ada
-        if ($request->has('delivery')) {
-            $product->delivery()->create($request->input('delivery'));
-        }
-        
-        if ($request->has('costInfo')) {
-            $product->cost()->create($request->input('costInfo'));
-        }
-        
-        if ($request->has('extraInfo')) {
-            $product->extra()->create($request->input('extraInfo'));
-        }
-        
-        if ($request->has('variantOptions')) {
-            foreach ($request->input('variantOptions') as $variantOption) {
-                // Menyimpan informasi varian
+            // Add conditional validation rules based on hasVariations
+            if ($request->hasVariations) {
+                $rules = array_merge($rules, [
+                    'variantTypes' => 'required|array',
+                    'variantTypes.*.name' => 'required|string|max:255',
+                    'variantTypes.*.values' => 'nullable|array',
+                    'variations' => 'required|array',
+                    'variations.*.name' => 'required|string',
+                    'variations.*.price' => 'required|numeric|min:0',
+                    'variations.*.stock' => 'required|integer|min:0',
+                    'variations.*.msku' => 'required|string',
+                    'variations.*.barcode' => 'nullable|string',
+                    'variations.*.combinations' => 'required'
+                ]);
+            } else {
+                $rules = array_merge($rules, [
+                    'basePrice' => 'required|numeric|min:0',
+                    'baseStock' => 'required|numeric|min:0|max:999999',
+                    'baseMsku' => 'required|string|max:255',
+                    'baseBarcode' => 'nullable|string|max:255'
+                ]);
             }
-        }
-        
-        if ($request->has('variations')) {
-            foreach ($request->input('variations') as $variation) {
-                // Menyimpan variasi produk
+
+            // Validate the request
+            $validated = $request->validate($rules);
+
+            // Convert 'hasSelfLife' to boolean
+            $validated['hasSelfLife'] = filter_var($validated['hasSelfLife'], FILTER_VALIDATE_BOOLEAN);
+
+            // Parse 'fullCategoryId' if it's a string
+            if (is_string($validated['fullCategoryId'])) {
+                $validated['fullCategoryId'] = json_decode($validated['fullCategoryId'], true);
             }
+
+            // Remove variation data from validated array
+            $hasVariations = $validated['hasVariations'] ?? false;
+            $variantTypes = $validated['variantTypes'] ?? [];
+            $variations = $validated['variations'] ?? [];
+            $basePrice = $validated['basePrice'] ?? null;
+            $baseStock = $validated['baseStock'] ?? null;
+            $baseMsku = $validated['baseMsku'] ?? null;
+            $baseBarcode = $validated['baseBarcode'] ?? null;
+
+            unset(
+                $validated['hasVariations'],
+                $validated['variantTypes'],
+                $validated['variations'],
+                $validated['basePrice'],
+                $validated['baseStock'],
+                $validated['baseMsku'],
+                $validated['baseBarcode']
+            );
+
+            // Create the product
+            $product = Product::create([
+                ...$validated,
+                'has_variations' => $hasVariations,
+            ]);
+
+            if ($hasVariations) {
+                // Store variation types and their values
+                foreach ($variantTypes as $index => $type) {
+                    if (!empty($type['name'])) {
+                        // Create variation type
+                        $variationType = VariationType::create([
+                            'product_id' => $product->id,
+                            'name' => $type['name'],
+                            'order' => $index + 1,
+                        ]);
+
+                        // Create values for this variation type
+                        if (!empty($type['values'])) {
+                            foreach ($type['values'] as $valueIndex => $value) {
+                                VariationTypeValue::create([
+                                    'variation_type_id' => $variationType->id,
+                                    'value' => $value,
+                                    'order' => $valueIndex + 1
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                // Store variations
+                foreach ($variations as $variation) {
+                    ProductVariation::create([
+                        'product_id' => $product->id,
+                        'name' => $variation['name'],
+                        'price' => $variation['price'],
+                        'stock' => $variation['stock'],
+                        'msku' => $variation['msku'],
+                        'barcode' => $variation['barcode'] ?? null,
+                        'combinations' => is_string($variation['combinations']) 
+                            ? $variation['combinations'] 
+                            : json_encode($variation['combinations'])
+                    ]);
+                }
+            } else {
+                // Store single product details
+                ProductVariation::create([
+                    'product_id' => $product->id,
+                    'name' => '-',
+                    'price' => $basePrice,
+                    'stock' => $baseStock,
+                    'msku' => $baseMsku,
+                    'barcode' => $baseBarcode,
+                    'combinations' => null
+                ]);
+            }
+
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Product created successfully',
+                'data' => $product->load('variationTypes.values', 'variations')
+            ]);
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollback();
+            Log::error('Validation error:', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating product: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error creating product:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating product: ' . $e->getMessage()
+            ], 422);
         }
-        
-        return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
-        
-
-        // Simpan produk utama
-        $product = Product::create($validated);
-
-        // Simpan relasi tambahan (jika ada)
-        if ($request->has('delivery')) {
-            $product->delivery()->create($request->input('delivery'));
-        }
-
-        if ($request->has('cost')) {
-            $product->cost()->create($request->input('cost'));
-        }
-
-        if ($request->has('extra')) {
-            $product->extra()->create($request->input('extra'));
-        }
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
 
-    // Menampilkan detail produk
-    public function show(Product $product)
+
+    public function show($spu)
     {
-        $product->load(['variants', 'delivery', 'cost', 'extra']);
+        $product = Product::with(['variantOptions', 'variations'])->findOrFail($spu);
         return view('products.show', compact('product'));
     }
 
-    // Form untuk mengedit produk
-    public function edit(Product $product)
+    public function edit($spu)
     {
+        $product = Product::with(['variantOptions', 'variations'])->findOrFail($spu);
         return view('products.edit', compact('product'));
     }
 
-    // Memperbarui produk
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $spu)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string',
-            'status' => 'required|string',
-            // Validasi lainnya sesuai kebutuhan
-        ]);
-
-        $product->update($validated);
-
-        // Perbarui relasi tambahan
-        if ($request->has('delivery')) {
-            $product->delivery()->updateOrCreate([], $request->input('delivery'));
-        }
-
-        if ($request->has('cost')) {
-            $product->cost()->updateOrCreate([], $request->input('cost'));
-        }
-
-        if ($request->has('extra')) {
-            $product->extra()->updateOrCreate([], $request->input('extra'));
-        }
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui.');
+        // Implementation for update
     }
 
-    // Menghapus produk
-    public function destroy(Product $product)
+    public function destroy($spu)
     {
-        $product->variants()->delete(); // Hapus semua variant
-        $product->delivery()->delete(); // Hapus informasi pengiriman
-        $product->cost()->delete(); // Hapus informasi biaya
-        $product->extra()->delete(); // Hapus informasi tambahan
-        $product->delete(); // Hapus produk utama
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus.');
+        try {
+            DB::beginTransaction();
+            
+            $product = Product::findOrFail($spu);
+            
+            // Delete related records
+            $product->variantOptions()->delete();
+            $product->variations()->delete();
+            $product->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('products.index')
+                ->with('success', 'Product deleted successfully');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete product: ' . $e->getMessage());
+            
+            return back()->with('error', 'Failed to delete product');
+        }
     }
 }

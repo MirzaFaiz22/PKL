@@ -10,22 +10,20 @@ class CreateProductsTable extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('spu')->unique();
-            $table->json('full_category_id')->nullable();
-            $table->string('sale_status')->nullable();
-            $table->string('condition');
-            $table->text('short_description');
+            $table->string('name', 300);
+            $table->string('spu', 200)->unique();
+            $table->json('fullCategoryId')->nullable();
+            $table->string('brand', 20)->nullable();
+            $table->enum('saleStatus', ['FOR_SALE', 'HOT_SALE', 'NEW_ARRIVAL', 'SALE_ENDED']);
+            $table->enum('condition', ['NEW', 'USED']);
+            $table->boolean('hasSelfLife')->default(false);
+            $table->integer('shelfLifeDuration')->nullable();
+            $table->integer('inboundLimit')->nullable();
+            $table->integer('outboundLimit')->nullable();
+            $table->integer('minPurchase')->default(1);
+            $table->text('shortDescription');
             $table->text('description');
-            $table->json('variant_options')->nullable();
-            $table->json('variations')->nullable();
-            $table->json('images')->nullable();
-            $table->json('delivery')->nullable();
-            $table->json('cost_info')->nullable();
-            $table->json('extra_info')->nullable();
-            $table->integer('min_purchase')->default(1);
-            $table->string('brand');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->boolean('has_variations')->default(false);
             $table->timestamps();
         });
     }
