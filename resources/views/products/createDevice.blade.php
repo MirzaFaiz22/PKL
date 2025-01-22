@@ -76,6 +76,7 @@
         <!-- Form Tambah Produk -->
         <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
+            <div id="product-form">
             <h4 style="font-weight: bold;">Basic Information:</h4>
 
             <div class="form-group">
@@ -844,44 +845,206 @@
                     variantImagesContainer.style.display = this.checked ? 'block' : 'none';
                 });
             </script>
-
             
+            <style>
+                .section-header {
+                    cursor: pointer;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                    margin-bottom: 10px;
+                }
+                .section-header:hover {
+                    background-color: #e9ecef;
+                }
+                .section-content {
+                    padding: 15px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                    margin-bottom: 20px;
+                }
+                .rotate {
+                    transform: rotate(180deg);
+                    transition: transform 0.3s ease;
+                }
+                .collapse-icon {
+                    transition: transform 0.3s ease;
+                }
+                .form-group {
+                    margin-bottom: 1rem;
+                }
+                input {
+                    border-radius: 8px !important;
+                }
+                .radio-group {
+                    display: flex;
+                    gap: 20px;
+                }
+            </style>
+
+            <div>
+                <h5 style="font-weight: bold;">Delivery: (optional)</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="length">Panjang (cm):</label>
+                            <input type="number" name="length" id="length" class="form-control" placeholder="Masukkan panjang">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="width">Lebar (cm):</label>
+                            <input type="number" name="width" id="width" class="form-control" placeholder="Masukkan lebar">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="height">Tinggi (cm):</label>
+                            <input type="number" name="height" id="height" class="form-control" placeholder="Masukkan tinggi">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="weight">Berat (g):</label>
+                            <input type="number" name="weight" id="weight" class="form-control" placeholder="Masukkan berat">
+                        </div>
+                    </div>
+                </div>
+                <label for="pre-order">Pre-Order:</label>
+                <div>
+                    <label class="radio-inline">
+                        <input type="radio" name="preOrder" value="yes"> Yes
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="preOrder" value="no"> No
+                    </label>
+                </div>
+
+
+                <h4 style="font-weight: bold;">Customs Information: (Optional)</h4>
+
+                <div id="customs-info">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="customs-chinese-name">Customs Chinese Name:</label>
+                                <input type="text" name="customs_chinese_name" id="customs-chinese-name" class="form-control" placeholder="Please Enter" maxlength="200" style="border-radius: 8px;">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="customs-english-name">Customs English Name:</label>
+                                <input type="text" name="customs_english_name" id="customs-english-name" class="form-control" placeholder="Please Enter" maxlength="200" style="border-radius: 8px;">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="hs-code">HS Code:</label>
+                                <input type="text" name="hs_code" id="hs-code" class="form-control" placeholder="Please Enter" maxlength="200" style="border-radius: 8px;">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="invoice-amount">Invoice Amount:</label>
+                                <input type="text" name="invoice_amount" id="invoice-amount" class="form-control" placeholder="Please Enter" style="border-radius: 8px;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gross-weight">Gross Weight (g):</label>
+                                <input type="number" name="gross_weight" id="gross-weight" class="form-control" placeholder="Please Enter" style="border-radius: 8px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="font-weight: bold;">Cost Information: (Optional)</h4>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="source-url">Source URL:</label>
+                            <input type="text" name="source_url" id="source-url" class="form-control" placeholder="Please Enter" maxlength="150" style="border-radius: 8px;">
+                            <small>0/150</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="purchase-duration">Purchase Duration:</label>
+                            <input type="text" name="purchase_duration" id="purchase-duration" class="form-control" placeholder="Please Enter" style="border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="sales-tax-amount">Sales Tax Amount:</label>
+                            <input type="text" name="sales_tax_amount" id="sales-tax-amount" class="form-control" placeholder="Please Enter" style="border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="font-weight: bold;">Other Information:(Optional)</h4>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks1">Remarks1:</label>
+                            <input type="text" name="remarks1" id="remarks1" class="form-control" placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50" style="border-radius: 8px;">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks2">Remarks2:</label>
+                            <input type="text" name="remarks2" id="remarks2" class="form-control" placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50" style="border-radius: 8px;">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks3">Remarks3:</label>
+                            <input type="text" name="remarks3" id="remarks3" class="form-control" placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50" style="border-radius: 8px;">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         
             <button type="submit" class="btn btn-primary mt-3" style="border-radius: 8px; width: 100%;">Simpan</button>
         </form>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        </div>          
 
 
         <!-- Form Tambah Jasa -->
-        <form id="service-form" style="display: none;">
-            <div class="form-group">
-                <label for="no-service">No Jasa:</label>
-                <input type="text" id="no-service" class="form-control" readonly style="border-radius: 8px;">
-            </div>
-
+        <form id="service-form" action="{{ route('services.store') }}" method="POST" style="display: none;">
+            @csrf
+            <input type="hidden" name="type" value="service">
+            
             <!-- Nama Jasa & Harga Beli -->
             <div class="row">
                 <div class="col-md-6">
                     <label for="nama-service">Nama Jasa:</label>
-                    <input type="text" id="nama-service" class="form-control" placeholder="Masukkan Nama Jasa" required style="border-radius: 8px;">
+                    <input type="text" id="nama-service" name="nama_service" class="form-control @error('nama_service') is-invalid @enderror" placeholder="Masukkan Nama Jasa" required style="border-radius: 8px;" value="{{ old('nama_service') }}">
+                    @error('nama_service')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6">
                     <label for="harga-beli-service">Harga Beli (Rp):</label>
-                    <input type="number" id="harga-beli-service" class="form-control" placeholder="0" required style="border-radius: 8px;">
+                    <input type="number" id="harga-beli-service" name="harga_beli_service" class="form-control @error('harga_beli_service') is-invalid @enderror" placeholder="0" required style="border-radius: 8px;" value="{{ old('harga_beli_service') }}">
+                    @error('harga_beli_service')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
 
@@ -889,51 +1052,48 @@
             <div class="row mt-3">
                 <div class="col-md-6">
                     <label for="kategori">Kategori:</label>
-                    <input type="text" id="kategori" class="form-control" placeholder="Masukkan Kategori" required style="border-radius: 8px;">
+                    <input type="text" id="kategori" name="kategori" class="form-control @error('kategori') is-invalid @enderror" placeholder="Masukkan Kategori" required style="border-radius: 8px;" value="{{ old('kategori') }}">
+                    @error('kategori')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6">
                     <label for="satuan">Satuan Perhitungan:</label>
-                    <input type="text" id="satuan" class="form-control" placeholder="Masukkan Satuan Perhitungan" required style="border-radius: 8px;">
+                    <input type="text" id="satuan" name="satuan" class="form-control @error('satuan') is-invalid @enderror" placeholder="Masukkan Satuan Perhitungan" required style="border-radius: 8px;" value="{{ old('satuan') }}">
+                    @error('satuan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
 
             <!-- Harga Jual -->
             <div class="form-group mt-3">
                 <label for="harga-jual">Harga Jual (Rp):</label>
-                <input type="number" id="harga-jual" class="form-control" placeholder="0" required style="border-radius: 8px;">
+                <input type="number" id="harga-jual" name="harga_jual" class="form-control @error('harga_jual') is-invalid @enderror" placeholder="0" required style="border-radius: 8px;" value="{{ old('harga_jual') }}">
+                @error('harga_jual')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
+
+            <!-- Alert Success/Error -->
+            @if(session('success'))
+                <div class="alert alert-success mt-3">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger mt-3">
+                    {{ session('error') }}
+                </div>
+            @endif
 
             <!-- Button Simpan -->
             <button type="submit" class="btn btn-primary mt-3" style="border-radius: 8px; width: 100%;">Simpan</button>
         </form>
-
         </div>
 
         <script>
-        let currentServiceNumber = 1;
-
-        function updateNoProduct() {
-            document.getElementById('no-product').value = `PRD-${currentProductNumber.toString().padStart(4, '0')}`;
-        }
-
-        function updateNoService() {
-            document.getElementById('no-service').value = `SVC-${currentServiceNumber.toString().padStart(4, '0')}`;
-        }
-
-        // Initialize form
-
-        updateNoService();
-
-        // Handle product form submission
-
-        // Handle service form submission
-        document.getElementById('service-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            alert('Jasa berhasil disimpan!');
-            this.reset();
-            currentServiceNumber++;
-            updateNoService();
-        });
 
         // Toggle forms based on type selection
         document.getElementById('type').addEventListener('change', function () {

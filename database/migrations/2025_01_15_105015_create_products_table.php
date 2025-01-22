@@ -24,6 +24,31 @@ class CreateProductsTable extends Migration
             $table->text('shortDescription');
             $table->text('description');
             $table->boolean('has_variations')->default(false);
+            // Delivery Fields
+            $table->boolean('is_preorder')->default(false);
+            
+            // Product Information for Delivery
+            $table->decimal('length', 10, 2)->nullable();
+            $table->decimal('width', 10, 2)->nullable();
+            $table->decimal('height', 10, 2)->nullable();
+            $table->decimal('weight', 10, 2)->nullable();
+            
+            // Customs Information
+            $table->string('customs_chinese_name', 200)->nullable();
+            $table->string('customs_english_name', 200)->nullable();
+            $table->string('hs_code', 200)->nullable();
+            $table->decimal('invoice_amount', 15, 2)->nullable();
+            $table->decimal('gross_weight', 10, 2)->nullable();
+            
+            // Cost Information
+            $table->string('source_url', 150)->nullable();
+            $table->string('purchase_duration')->nullable();
+            $table->decimal('sales_tax_amount', 15, 2)->nullable();
+            
+            // Other Information
+            $table->string('remarks1', 50)->nullable();
+            $table->string('remarks2', 50)->nullable();
+            $table->string('remarks3', 50)->nullable();
             $table->timestamps();
         });
 

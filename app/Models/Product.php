@@ -23,7 +23,24 @@ class Product extends Model
         'minPurchase',
         'shortDescription',
         'description',
-        'has_variations'
+        'has_variations',
+        // Delivery Fields
+        'is_preorder',
+        'length',
+        'width',
+        'height',
+        'weight',
+        'customs_chinese_name',
+        'customs_english_name',
+        'hs_code',
+        'invoice_amount',
+        'gross_weight',
+        'source_url',
+        'purchase_duration',
+        'sales_tax_amount',
+        'remarks1',
+        'remarks2',
+        'remarks3'
     ];
 
     protected $casts = [
