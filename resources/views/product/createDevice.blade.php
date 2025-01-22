@@ -74,7 +74,7 @@
         </div>
 
         <!-- Form Tambah Produk -->
-        <form action="{{ route('products.store') }}" method="POST">
+        <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <h4 style="font-weight: bold;">Basic Information:</h4>
 
@@ -440,418 +440,412 @@
             </div>
 
             <!-- Media Settings Section -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h4 class="mb-0">Media Settings</h4>
-    </div>
-    <div class="card-body">
-        <!-- Main Product Images -->
-        <div class="mb-4">
-            <label class="d-block mb-2">Product Image Max: 9</label>
-            <div class="product-images-container d-flex flex-wrap gap-3">
-                <div class="image-upload-box" style="width: 120px; height: 120px;">
-                    <input type="file" 
-                           class="product-image-input" 
-                           name="product_images[]" 
-                           accept="image/*" 
-                           style="display: none;">
-                    <div class="upload-placeholder border d-flex align-items-center justify-content-center" 
-                         style="width: 100%; height: 100%; cursor: pointer;">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <div class="image-preview" style="display: none; width: 100%; height: 100%;">
-                        <img src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
-                        <button type="button" class="btn btn-sm btn-danger remove-image" 
-                                style="position: absolute; top: 5px; right: 5px;">×</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Variant Images -->
-        <div id="variant-images-container" style="display: none;">
-            <label class="d-block mb-2">Variant Images</label>
-            <div id="variant-images-grid" class="d-flex flex-wrap gap-4">
-                <!-- Will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-</div>
-
-            <script>
-                // Store variation values
-let variationValues = {
-    1: [], // First variation type values
-    2: []  // Second variation type values
-};
-
-let productImages = []; // Store product images
-let variantImages = {}; // Store variant images by combination name
-
-// Handle checkbox change
-document.getElementById('product-variations').addEventListener('change', function(e) {
-    const variationFields = document.getElementById('variation-fields');
-    const baseFields = document.getElementById('base-fields');
-    
-    if (e.target.checked) {
-        variationFields.style.display = 'block';
-        baseFields.style.display = 'none';
-    } else {
-        variationFields.style.display = 'none';
-        baseFields.style.display = 'block';
-        // Clear all variation values
-        variationValues = { 1: [], 2: [] };
-        updateVariationLists();
-        generateVariationRows();
-        updateHiddenInputs();
-    }
-});
-
-// Add variation value
-function addValue(typeNumber) {
-    const input = document.getElementById(`variation-value-${typeNumber}`);
-    const value = input.value.trim();
-    const typeInput = document.getElementById(`variation-type-${typeNumber}`);
-    const typeName = typeInput.value.trim();
-    
-    if (!typeName) {
-        alert('Please enter variation type first');
-        return;
-    }
-    
-    if (value && !variationValues[typeNumber].includes(value)) {
-        variationValues[typeNumber].push(value);
-        input.value = ''; // Clear input
-        updateVariationLists();
-        generateVariationRows();
-        updateHiddenInputs();
-    }
-}
-
-// Remove variation value
-function removeValue(typeNumber, value) {
-    const index = variationValues[typeNumber].indexOf(value);
-    if (index > -1) {
-        variationValues[typeNumber].splice(index, 1);
-        updateVariationLists();
-        generateVariationRows();
-        updateHiddenInputs();
-    }
-}
-
-// Update hidden inputs with current values
-function updateHiddenInputs() {
-    [1, 2].forEach(typeNumber => {
-        const hiddenInput = document.getElementById(`variation-values-${typeNumber}`);
-        hiddenInput.value = JSON.stringify(variationValues[typeNumber]);
-    });
-}
-
-// Update variation lists display
-function updateVariationLists() {
-    [1, 2].forEach(typeNumber => {
-        const container = document.getElementById(`values-list-${typeNumber}`);
-        container.innerHTML = '';
-        
-        variationValues[typeNumber].forEach(value => {
-            const badge = document.createElement('span');
-            badge.className = 'badge bg-light text-dark border me-2 mb-2';
-            badge.innerHTML = `
-                ${value}
-                <button type="button" class="btn-close ms-2" 
-                    onclick="removeValue(${typeNumber}, '${value}')"
-                    style="font-size: 0.5rem;">×</button>
-            `;
-            container.appendChild(badge);
-        });
-    });
-}
-
-// Generate variation table rows
-// Modify the generateVariationRows function to include image upload
-function generateVariationRows() {
-    const tbody = document.getElementById('variations-body');
-    const variantImagesGrid = document.getElementById('variant-images-grid');
-    tbody.innerHTML = '';
-    variantImagesGrid.innerHTML = '';
-    
-    // Get variation type names
-    const type1Name = document.getElementById('variation-type-1').value || '';
-    const type2Name = document.getElementById('variation-type-2').value || '';
-    
-    // Generate combinations
-    let combinations = [];
-    if (variationValues[1].length && variationValues[2].length) {
-        // Both variation types have values
-        variationValues[1].forEach(val1 => {
-            variationValues[2].forEach(val2 => {
-                combinations.push({
-                    name: `${val1}/${val2}`,
-                    combinations: {
-                        [type1Name]: val1,
-                        [type2Name]: val2
-                    }
-                });
-            });
-        });
-    } else if (variationValues[1].length || variationValues[2].length) {
-        // Only one variation type has values
-        const activeValues = variationValues[1].length ? variationValues[1] : variationValues[2];
-        const activeTypeName = variationValues[1].length ? type1Name : type2Name;
-        combinations = activeValues.map(val => ({
-            name: val,
-            combinations: {
-                [activeTypeName]: val
-            }
-        }));
-    }
-    
-    // Create rows and image upload boxes
-    combinations.forEach((combination, index) => {
-        // Create table row
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${combination.name}</td>
-            <td>
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Rp</span>
-                    </div>
-                    <input type="number" 
-                        name="variations[${index}][price]" 
-                        class="form-control" 
-                        placeholder="Please Enter"
-                        required>
-                </div>
-            </td>
-            <td>
-                <input type="number" 
-                    name="variations[${index}][stock]" 
-                    class="form-control" 
-                    placeholder="Should be between 0-999,999"
-                    required>
-            </td>
-            <td>
-                <input type="text" 
-                    name="variations[${index}][msku]" 
-                    class="form-control" 
-                    placeholder="Please Enter"
-                    required>
-            </td>
-            <td>
-                <input type="text" 
-                    name="variations[${index}][barcode]" 
-                    class="form-control" 
-                    placeholder="Barcode only supports letters, numb..."
-                    required>
-            </td>
-            <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
-            <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
-        `;
-        tbody.appendChild(row);
-
-        // Create variant image upload box
-        const imageBox = document.createElement('div');
-        imageBox.className = 'variant-image-box position-relative mb-4';
-        imageBox.innerHTML = `
-            <div class="card" style="width: 200px;">
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h6 class="mb-0">${combination.name}</h6>
+                    <h4 class="mb-0">Media Settings</h4>
                 </div>
-                <div class="card-body p-2">
-                    <div class="image-upload-container position-relative" style="width: 180px; height: 180px;">
-                        <input type="file" 
-                               class="variant-image-input"
-                               name="variant_images[${index}]" 
-                               accept="image/*"
-                               style="display: none;">
-                        <div class="upload-placeholder border d-flex align-items-center justify-content-center position-absolute top-0 start-0 w-100 h-100"
-                             style="cursor: pointer; z-index: 1;">
-                            <i class="fas fa-plus"></i>
+                <div class="card-body">
+                    <!-- Main Product Images -->
+                    <div class="mb-4">
+                        <label class="d-block mb-2">Product Image Max: 9</label>
+                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                            <!-- Placeholder for uploading new images -->
+                            <div class="image-upload-box" style="width: 120px; height: 120px;">
+                            <input type="file" 
+                                class="product-image-input" 
+                                name="product_images[]" 
+                                accept="image/*" 
+                                style="display: none;" 
+                                multiple>
+                                <div class="upload-placeholder border d-flex align-items-center justify-content-center" 
+                                    style="width: 100%; height: 100%; cursor: pointer;">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                            <!-- Container for displaying uploaded images -->
+                            <div class="product-image-container">
+                                <!-- Product images will be dynamically added here -->
+                            </div>
                         </div>
-                        <div class="image-preview position-absolute top-0 start-0 w-100 h-100" style="display: none;">
-                            <img src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
-                            <button type="button" 
-                                    class="btn btn-sm btn-danger remove-image position-absolute"
-                                    style="top: 5px; right: 5px; z-index: 2;">×</button>
+                    </div>
+
+                    <!-- Variant Images -->
+                    <div id="variant-images-container" style="display: none;">
+                        <label class="d-block mb-2">Variant Images</label>
+                        <div id="variant-images-grid" class="d-flex flex-wrap gap-4">
+                            <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
                 </div>
             </div>
-        `;
-        variantImagesGrid.appendChild(imageBox);
-    });
 
-    // Add CSS to parent container for proper grid layout
-    variantImagesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;';
 
-    // Show variant images container if there are combinations
-    const variantImagesContainer = document.getElementById('variant-images-container');
-    variantImagesContainer.style.display = combinations.length ? 'block' : 'none';
+            <style>
+            .product-image-container {
+                display: flex; /* Flexbox untuk tata letak horizontal */
+                gap: 10px; /* Jarak antar gambar */
+                flex-wrap: wrap; /* Agar gambar turun ke baris baru jika ruang tidak cukup */
+                width: 100%; /* Kontainer menggunakan lebar penuh */
+            }
 
-    // Initialize image upload handlers
-    initializeVariantImageHandlers();
-}
+            .image-upload-box {
+                width: 120px; /* Lebar konsisten */
+                height: 120px; /* Tinggi konsisten */
+                position: relative;
+            }
 
-// Initialize variant image upload handlers
-function initializeVariantImageHandlers() {
-    // Handle click on upload placeholder
-    document.querySelectorAll('.variant-image-box .upload-placeholder').forEach(placeholder => {
-        placeholder.addEventListener('click', function() {
-            const input = this.parentElement.querySelector('.variant-image-input');
-            input.click();
-        });
-    });
+            .image-preview {
+                width: 120px; /* Ukuran konsisten */
+                height: 120px; /* Sama dengan upload box */
+                position: relative;
+            }
 
-    // Handle file input change
-    document.querySelectorAll('.variant-image-box .variant-image-input').forEach(input => {
-        input.addEventListener('change', function(e) {
-            const container = this.closest('.image-upload-container');
-            const preview = container.querySelector('.image-preview');
-            const img = preview.querySelector('img');
-            const placeholder = container.querySelector('.upload-placeholder');
+            .image-preview img {
+                width: 100%; /* Memastikan gambar memenuhi kontainer */
+                height: 100%;
+                object-fit: cover; /* Gambar tidak terdistorsi */
+            }
 
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    preview.style.display = 'block';
-                    placeholder.style.display = 'none';
+            .upload-placeholder {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100%;
+                border: 1px dashed #ccc; /* Garis putus-putus untuk placeholder */
+                cursor: pointer;
+            }
+
+            .remove-image {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                z-index: 10; /* Pastikan tombol hapus berada di atas gambar */
+                cursor: pointer;
+            }
+
+
+            </style>
+
+                <script>
+                // Store variation values
+                let variationValues = {
+                    1: [], // First variation type values
+                    2: []  // Second variation type values
                 };
 
-                reader.readAsDataURL(this.files[0]);
-            }
-        });
-    });
+                // Handle checkbox change
+                document.getElementById('product-variations').addEventListener('change', function(e) {
+                    const variationFields = document.getElementById('variation-fields');
+                    const baseFields = document.getElementById('base-fields');
 
-    // Handle remove image button
-    document.querySelectorAll('.variant-image-box .remove-image').forEach(button => {
-        button.addEventListener('click', function() {
-            const container = this.closest('.image-upload-container');
-            const input = container.querySelector('.variant-image-input');
-            const preview = container.querySelector('.image-preview');
-            const placeholder = container.querySelector('.upload-placeholder');
+                    if (e.target.checked) {
+                        variationFields.style.display = 'block';
+                        baseFields.style.display = 'none';
+                    } else {
+                        variationFields.style.display = 'none';
+                        baseFields.style.display = 'block';
+                        // Clear all variation values
+                        variationValues = { 1: [], 2: [] };
+                        updateVariationLists();
+                        generateVariationRows();
+                        updateHiddenInputs();
+                    }
+                });
 
-            input.value = ''; // Clear the file input
-            preview.style.display = 'none';
-            placeholder.style.display = 'flex';
-        });
-    });
-}
+                // Add variation value
+                function addValue(typeNumber) {
+                    const input = document.getElementById(`variation-value-${typeNumber}`);
+                    const value = input.value.trim();
+                    const typeInput = document.getElementById(`variation-type-${typeNumber}`);
+                    const typeName = typeInput.value.trim();
 
-// Add styles to document head for proper positioning
-const style = document.createElement('style');
-style.textContent = `
-    .variant-image-box .image-upload-container {
-        position: relative;
-        overflow: hidden;
-    }
-    .variant-image-box .image-preview {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #fff;
-    }
-    .variant-image-box .image-preview img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .variant-image-box .remove-image {
-        z-index: 10;
-    }
-    #variant-images-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-`;
-document.head.appendChild(style);
+                    if (!typeName) {
+                        alert('Please enter variation type first');
+                        return;
+                    }
 
+                    if (value && !variationValues[typeNumber].includes(value)) {
+                        variationValues[typeNumber].push(value);
+                        input.value = ''; // Clear input
+                        updateVariationLists();
+                        generateVariationRows();
+                        updateHiddenInputs();
+                    }
+                }
 
+                // Remove variation value
+                function removeValue(typeNumber, value) {
+                    const index = variationValues[typeNumber].indexOf(value);
+                    if (index > -1) {
+                        variationValues[typeNumber].splice(index, 1);
+                        updateVariationLists();
+                        generateVariationRows();
+                        updateHiddenInputs();
+                    }
+                }
 
-// Update the checkbox change handler to reset variant images
-document.getElementById('product-variations').addEventListener('change', function(e) {
-    const variationFields = document.getElementById('variation-fields');
-    const baseFields = document.getElementById('base-fields');
-    const variantImagesContainer = document.getElementById('variant-images-container');
-    
-    if (e.target.checked) {
-        variationFields.style.display = 'block';
-        baseFields.style.display = 'none';
-        variantImagesContainer.style.display = 'block';
-    } else {
-        variationFields.style.display = 'none';
-        baseFields.style.display = 'block';
-        variantImagesContainer.style.display = 'none';
-        // Clear all variation values
-        variationValues = { 1: [], 2: [] };
-        updateVariationLists();
-        generateVariationRows();
-        updateHiddenInputs();
-    }
-});
+                // Update hidden inputs with current values
+                function updateHiddenInputs() {
+                    [1, 2].forEach(typeNumber => {
+                        const hiddenInput = document.getElementById(`variation-values-${typeNumber}`);
+                        hiddenInput.value = JSON.stringify(variationValues[typeNumber]);
+                    });
+                }
 
-// Form submission handler
-document.querySelector('form').addEventListener('submit', function(e) {
-    e.preventDefault();
+                // Update variation lists display
+                function updateVariationLists() {
+                    [1, 2].forEach(typeNumber => {
+                        const container = document.getElementById(`values-list-${typeNumber}`);
+                        container.innerHTML = '';
 
-    const hasVariations = document.getElementById('product-variations').checked;
-    const formData = new FormData(this);
-    
-    if (hasVariations) {
-        // Add variation types data
-        const type1Name = document.getElementById('variation-type-1').value.trim();
-        const type2Name = document.getElementById('variation-type-2').value.trim();
-        
-        if (type1Name && variationValues[1].length > 0) {
-            formData.set('variantTypes[0][name]', type1Name);
-            variationValues[1].forEach((value, index) => {
-                formData.append(`variantTypes[0][values][${index}]`, value);
-            });
-        }
-        
-        if (type2Name && variationValues[2].length > 0) {
-            formData.set('variantTypes[1][name]', type2Name);
-            variationValues[2].forEach((value, index) => {
-                formData.append(`variantTypes[1][values][${index}]`, value);
-            });
-        }
-        
-        formData.set('hasVariations', '1');
-    } else {
-        formData.set('hasVariations', '0');
-    }
+                        variationValues[typeNumber].forEach(value => {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-light text-dark border me-2 mb-2';
+                            badge.innerHTML = `
+                                ${value}
+                                <button type="button" class="btn-close ms-2" 
+                                    onclick="removeValue(${typeNumber}, '${value}')"
+                                    style="font-size: 0.5rem;">×</button>
+                            `;
+                            container.appendChild(badge);
+                        });
+                    });
+                }
 
-    // Submit the form
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Response:', data);
-        if (data.success) {
-            alert('Product saved successfully!');
-            window.location.href = '/products';
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while saving the product');
-    });
-});
+                // Generate variation table rows
+                function generateVariationRows() {
+                    const tbody = document.getElementById('variations-body');
+                    tbody.innerHTML = '';
+
+                    // Get variation type names
+                    const type1Name = document.getElementById('variation-type-1').value || '';
+                    const type2Name = document.getElementById('variation-type-2').value || '';
+
+                    // Generate combinations
+                    let combinations = [];
+                    if (variationValues[1].length && variationValues[2].length) {
+                        // Both variation types have values
+                        variationValues[1].forEach(val1 => {
+                            variationValues[2].forEach(val2 => {
+                                combinations.push({
+                                    name: `${val1}/${val2}`,
+                                    combinations: {
+                                        [type1Name]: val1,
+                                        [type2Name]: val2
+                                    }
+                                });
+                            });
+                        });
+                    } else if (variationValues[1].length || variationValues[2].length) {
+                        // Only one variation type has values
+                        const activeValues = variationValues[1].length ? variationValues[1] : variationValues[2];
+                        const activeTypeName = variationValues[1].length ? type1Name : type2Name;
+                        combinations = activeValues.map(val => ({
+                            name: val,
+                            combinations: {
+                                [activeTypeName]: val
+                            }
+                        }));
+                    }
+
+                    // Create rows
+                    combinations.forEach((combination, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${combination.name}</td>
+                            <td>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp</span>
+                                    </div>
+                                    <input type="number" 
+                                        name="variations[${index}][price]" 
+                                        class="form-control" 
+                                        placeholder="Please Enter"
+                                        required>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" 
+                                    name="variations[${index}][stock]" 
+                                    class="form-control" 
+                                    placeholder="Should be between 0-999,999"
+                                    required>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                    name="variations[${index}][msku]" 
+                                    class="form-control" 
+                                    placeholder="Please Enter"
+                                    required>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                    name="variations[${index}][barcode]" 
+                                    class="form-control" 
+                                    placeholder="Barcode only supports letters, numb..."
+                                    required>
+                            </td>
+                            <td>
+                                <div class="variation-photo-section">
+                                    <div class="image-upload-container">
+                                        <label class="image-upload-box" style="width: 60px; height: 60px;">
+                                            <input type="file" 
+                                                class="variation-photos d-none" 
+                                                name="variations[${index}][photos][]"
+                                                accept="image/*"
+                                                multiple 
+                                                data-max-files="8"
+                                                data-variation-name="${combination.name}">
+                                            <div class="upload-placeholder">
+                                                <span class="plus-icon">+</span>
+                                            </div>
+                                        </label>
+                                        <div class="variation-photos-preview d-flex flex-wrap gap-2" 
+                                            id="preview-${index}">
+                                        </div>
+                                        <small class="text-muted d-block">
+                                            <span class="photos-count">Max 1</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
+                            <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                // Form submission handler
+                document.querySelector('form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+
+                    // Kirim form
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Form berhasil dikirim:', data);
+                    })
+                    .catch(error => {
+                        console.error('Terjadi kesalahan saat mengirim form:', error);
+                    });
+                });
+
+                // Product Images Upload
+                document.querySelector('.product-image-input').addEventListener('change', function(event) {
+                    const productImageContainer = document.querySelector('.product-image-container');
+                    const imageUploadBox = this.closest('.image-upload-box');
+                    const files = Array.from(event.target.files).slice(0, 8); // Batasi maks 8 gambar
+
+                    // Cek total gambar yang sudah ada
+                    const existingImages = productImageContainer.querySelectorAll('.image-preview').length;
+                    const remainingSlots = 8 - existingImages;
+
+                    files.slice(0, remainingSlots).forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const previewDiv = document.createElement('div');
+                                previewDiv.className = 'image-preview position-relative';
+                                previewDiv.innerHTML = `
+                                    <img src="${e.target.result}" alt="Product Image">
+                                    <span class="remove-image text-danger">
+                                        <i class="fas fa-times-circle"></i>
+                                    </span>
+                                `;
+
+                                // Tambahkan event listener untuk tombol hapus
+                                previewDiv.querySelector('.remove-image').addEventListener('click', function() {
+                                    productImageContainer.removeChild(previewDiv);
+                                    // Reset input jika semua gambar dihapus
+                                    if (productImageContainer.children.length === 0) {
+                                        event.target.value = '';
+                                    }
+                                });
+
+                                productImageContainer.appendChild(previewDiv);
+
+                                // Sembunyikan upload box jika sudah 8 gambar
+                                if (productImageContainer.children.length >= 8) {
+                                    imageUploadBox.style.display = 'none';
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
+                    // Tampilkan pesan jika melebihi 8 gambar
+                    if (files.length > remainingSlots) {
+                        alert(`Anda hanya dapat mengunggah maksimal 8 gambar. ${files.length - remainingSlots} gambar diabaikan.`);
+                    }
+                });
+
+                // Tambahkan event listener untuk upload placeholder
+                document.querySelector('.upload-placeholder').addEventListener('click', function() {
+                    this.closest('.image-upload-box').querySelector('.product-image-input').click();
+                });
+                // Variant Images Upload
+                document.getElementById('variations-body').addEventListener('change', function(e) {
+                    if (e.target.classList.contains('variation-photos')) {
+                        const fileInput = e.target;
+                        const previewContainer = fileInput.closest('.image-upload-container').querySelector('.variation-photos-preview');
+                        const photosCountSpan = fileInput.closest('.image-upload-container').querySelector('.photos-count');
+                        
+                        // Bersihkan preview sebelumnya
+                        previewContainer.innerHTML = '';
+                        
+                        // Ambil hanya file pertama (max 1 foto)
+                        const file = fileInput.files[0];
+                        
+                        if (file && file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const imgWrapper = document.createElement('div');
+                                imgWrapper.className = 'position-relative me-2 mb-2';
+                                imgWrapper.innerHTML = `
+                                    <img src="${event.target.result}" 
+                                        style="width: 60px; height: 60px; object-fit: cover;" 
+                                        class="img-thumbnail">
+                                    <button type="button" 
+                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-photo" 
+                                            style="padding: 0 5px;">×</button>
+                                `;
+                                
+                                // Tambahkan tombol hapus
+                                imgWrapper.querySelector('.remove-photo').addEventListener('click', () => {
+                                    previewContainer.innerHTML = '';
+                                    fileInput.value = ''; // Reset input file
+                                });
+                                
+                                previewContainer.appendChild(imgWrapper);
+                                
+                                // Update tampilan jumlah foto
+                                photosCountSpan.textContent = '1/1';
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                });
+
+                // Optional: Tampilkan kontainer variant images saat checkbox variasi dicentang
+                document.getElementById('product-variations').addEventListener('change', function(e) {
+                    const variantImagesContainer = document.getElementById('variant-images-container');
+                    variantImagesContainer.style.display = this.checked ? 'block' : 'none';
+                });
             </script>
 
+            
         
             <button type="submit" class="btn btn-primary mt-3" style="border-radius: 8px; width: 100%;">Simpan</button>
         </form>

@@ -13,17 +13,18 @@ class ProductVariation extends Model
         'stock',
         'msku',
         'barcode',
-        'combinations'
+        'combinations',
+        'variant_image_path'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'stock' => 'integer',
-        'combinations' => 'array'
+        'combinations' => 'json'
     ];
 
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
+
 }

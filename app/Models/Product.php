@@ -27,9 +27,9 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'fullCategoryId' => 'array',
         'hasSelfLife' => 'boolean',
-        'has_variations' => 'boolean'
+        'has_variations' => 'boolean',
+        'fullCategoryId' => 'array'
     ];
 
     public function variationTypes()
@@ -40,5 +40,10 @@ class Product extends Model
     public function variations()
     {
         return $this->hasMany(ProductVariation::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
     }
 }

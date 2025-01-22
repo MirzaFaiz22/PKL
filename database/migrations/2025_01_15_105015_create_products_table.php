@@ -26,10 +26,59 @@ class CreateProductsTable extends Migration
             $table->boolean('has_variations')->default(false);
             $table->timestamps();
         });
+
+        Schema::create('product_images', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('image_path');
+            $table->timestamps();
+        });
+
+        Schema::create('variation_types', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->json('values')->nullable();
+            $table->integer('order')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('variation_type_values', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('variation_type_id')->constrained()->onDelete('cascade');
+            $table->string('value');
+            $table->integer('order')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('product_variations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->decimal('price', 10, 2);
+            $table->integer('stock');
+            $table->string('msku');
+            $table->string('barcode')->nullable();
+            $table->json('combinations')->nullable();
+            $table->string('variant_image_path')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function down()
     {
         Schema::dropIfExists('products');
+        
+        Schema::dropIfExists('product_images');
+    
+        Schema::dropIfExists('variation_types');
+
+
+        Schema::dropIfExists('variation_type_values');
+
+
+        Schema::dropIfExists('product_variations');
+
     }
 }
+
