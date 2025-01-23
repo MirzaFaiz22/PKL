@@ -34,7 +34,7 @@ class ProductController extends Controller
     }
 
     DB::beginTransaction();
-    dd($request->all());
+    
     try {
         $rules = [
             'name' => 'required|max:300',
@@ -213,7 +213,7 @@ class ProductController extends Controller
     {
         // Load necessary relationships
         $product->load('variationTypes.values', 'variations', 'images');
-        return view('products.edit', compact('product'));
+        return view('products.productEdit', compact('product'));
     }
 
     public function update(Request $request, Product $product)

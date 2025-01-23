@@ -49,6 +49,33 @@ class Product extends Model
         'fullCategoryId' => 'array'
     ];
 
+// Accessor
+    public function getCategoryNameAttribute()
+    {
+        $categories = [
+            '100551' => 'Language Learning & Dictionaries',
+            '101560' => 'Science & Maths',
+            '100778' => 'E-Books',
+            '100779' => 'Others'
+        ];
+
+        if (!$this->fullCategoryId) return '-';
+
+        $lastCategoryId = is_array($this->fullCategoryId) 
+            ? end($this->fullCategoryId) 
+            : json_decode($this->fullCategoryId, true)[0] ?? null;
+
+        return $lastCategoryId ? ($categories[$lastCategoryId] ?? 'Unknown') : '-';
+    }
+
+    public function setFullCategoryIdAttribute($value)
+    {
+        // Ensure it's always stored as a JSON string
+        $this->attributes['fullCategoryId'] = is_array($value) 
+            ? json_encode($value) 
+            : $value;
+    }
+
     public function variationTypes()
     {
         return $this->hasMany(VariationType::class);
