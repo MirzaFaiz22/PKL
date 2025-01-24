@@ -14,12 +14,14 @@ class ProductVariation extends Model
         'msku',
         'barcode',
         'combinations',
-        'variant_image_path'
+        'variant_image_path',
+        'sold_count'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'combinations' => 'json'
+        'combinations' => 'json',
+        'sold_count' => 'integer'
     ];
 
     public function product()

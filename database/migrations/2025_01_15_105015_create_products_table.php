@@ -49,6 +49,7 @@ class CreateProductsTable extends Migration
             $table->string('remarks1', 50)->nullable();
             $table->string('remarks2', 50)->nullable();
             $table->string('remarks3', 50)->nullable();
+            $table->integer('sold_count')->default(0);
             $table->timestamps();
         });
 
@@ -86,6 +87,7 @@ class CreateProductsTable extends Migration
             $table->string('barcode')->nullable();
             $table->json('combinations')->nullable();
             $table->string('variant_image_path')->nullable();
+            $table->integer('sold_count')->default(0);
             $table->timestamps();
         });
     }

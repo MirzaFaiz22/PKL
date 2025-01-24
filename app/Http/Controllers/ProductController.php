@@ -69,6 +69,7 @@ class ProductController extends Controller
             'remarks1' => 'nullable|string|max:50',
             'remarks2' => 'nullable|string|max:50',
             'remarks3' => 'nullable|string|max:50',
+            
         ];
 
         if ($request->boolean('hasVariations')) {
@@ -128,6 +129,7 @@ class ProductController extends Controller
         $product = Product::create([
             ...$validated,
             'has_variations' => $hasVariations,
+            'sold_count' => 0, // Initialize sold count
         ]);
 
         if ($request->hasFile('product_images')) {
@@ -170,6 +172,7 @@ class ProductController extends Controller
                         ? $variation['combinations']
                         : json_encode($variation['combinations']),
                     'variant_image_path' => $variantImagePath,
+                    'sold_count' => 0, // Initialize sold count
                 ]);
             }
         } else {
@@ -181,6 +184,7 @@ class ProductController extends Controller
                 'msku' => $baseMsku,
                 'barcode' => $baseBarcode,
                 'combinations' => null,
+                'sold_count' => 0, // Initialize sold count
             ]);
         }
 
@@ -192,20 +196,106 @@ class ProductController extends Controller
                 'message' => 'Product created successfully',
                 'data' => $product->load('variationTypes', 'variations', 'images'),
             ])
-            : redirect()->route('products.index')->with('success', 'Product created successfully');
-    } catch (\Exception $e) {
-        DB::rollback();
-        Log::error('Error creating product:', [
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
+        : redirect()->route('products.index')->with('success', 'Product created successfully');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error creating product:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating product: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function updateSales(Request $request, Product $product)
+    {
+        DB::transaction(function () use ($request, $product) {
+            $variationId = $request->input('variation_id');
+            $quantity = $request->input('quantity');
+
+            // Update product total sold count
+            $product->increment('sold_count', $quantity);
+
+            // Update specific variation sold count
+            if ($product->has_variations) {
+                $variation = ProductVariation::where('product_id', $product->id)
+                    ->where('id', $variationId)
+                    ->firstOrFail();
+                
+                $variation->increment('sold_count', $quantity);
+            }
+        });
 
         return response()->json([
-            'success' => false,
-            'message' => 'Error creating product: ' . $e->getMessage(),
-        ], 422);
+            'success' => true,
+            'message' => 'Sales updated successfully'
+        ]);
     }
-}
+
+    public function show(Product $product)
+    {
+        try {
+            // Load all necessary relationships with eager loading
+            $product->load([
+                'variationTypes.values', 
+                'variations', 
+                'images'
+            ]);
+
+            // Retrieve similar products in the same category
+            $similarProducts = Product::when($product->fullCategoryId, function ($query) use ($product) {
+                    return $query->where('fullCategoryId', $product->fullCategoryId)
+                                ->where('id', '!=', $product->id);
+                })
+                ->limit(4)
+                ->get();
+
+            // Prepare additional metadata
+            $productMetadata = [
+                'totalVariations' => $product->variations->count(),
+                'totalImages' => $product->images->count(),
+                'totalStock' => $product->variations->sum('stock')
+            ];
+
+            // Check inventory status
+            $inventoryStatus = $productMetadata['totalStock'] > 0 ? 'Tersedia' : 'Habis';
+
+            // Determine price range for variant products
+            $priceRange = $product->has_variations 
+                ? [
+                    'min' => $product->variations->min('price'),
+                    'max' => $product->variations->max('price')
+                ]
+                : ['min' => $product->variations->first()->price ?? 0];
+
+            // Prepare view data
+            $viewData = [
+                'product' => $product,
+                'similarProducts' => $similarProducts,
+                'productMetadata' => $productMetadata,
+                'inventoryStatus' => $inventoryStatus,
+                'priceRange' => $priceRange
+            ];
+
+            // Render the view with prepared data
+            return view('products.show', $viewData);
+
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Error in product show method: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'error' => $e->getTraceAsString()
+            ]);
+
+            // Redirect with error message
+            return redirect()->route('products.index')
+                ->with('error', 'Terjadi kesalahan saat menampilkan detail produk.');
+        }
+    }
 
    // Add these methods to your existing ProductController class
 

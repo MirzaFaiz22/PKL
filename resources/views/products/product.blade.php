@@ -51,70 +51,74 @@
 
     <table id="products-table" class="table table-bordered mt-2" style="border: 1px solid black; border-radius: 15px; overflow: hidden; display: table; background-color: #f8f9fa;">
     <thead class="thead-light">
-    <tr>
-        <th>No</th>
-        <th>Image</th>
-        <th>Name</th>
-        <th>SPU</th>
-        <th>Category</th>
-        <th>Sale Status</th>
-        <th>Condition</th>
-        <th>Price</th>
-        <th>Actions</th>
-    </tr>
-</thead>
-<tbody>
-    @foreach ($products as $key => $product)
-    <tr data-id="{{ $product->id }}">
-        <td>{{ $key + 1 }}</td>
-        <td>
-            <div class="product-images-container d-flex flex-wrap gap-2">
-                @forelse($product->images as $image)
-                    <img src="{{ asset('storage/' . $image->image_path) }}" 
-                        alt="Product Image {{ $loop->iteration }}" 
-                        style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
-                @empty
-                    <img src="{{ asset('images/no-image.png') }}" 
-                        alt="No Image" 
-                        style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
-                @endforelse
-            </div>
-        </td>
-        <td>{{ $product->name }}</td>
-        <td>{{ $product->spu }}</td>
-        <td>
-            @if($product->fullCategoryId)
-                @php
-                    $categoryIds = is_string($product->fullCategoryId) 
-                        ? json_decode($product->fullCategoryId) 
-                        : $product->fullCategoryId;
-                    $lastCategoryId = is_array($categoryIds) ? end($categoryIds) : null;
-                    $categoryName = $lastCategoryId 
-                        ? \App\Helpers\CategoryData::findCategoryName($lastCategoryId) 
-                        : 'Unknown Category';
-                @endphp
-                {{ $categoryName }}
-            @else
-                -
-            @endif
-        </td>
-        <td>{{ $product->saleStatus }}</td>
-        <td>{{ $product->condition }}</td>
-        <td>{{ $product->variations->first()->price ? 'Rp ' . number_format($product->variations->first()->price, 0, ',', '.') : '-' }}</td>
-        <td>
-            <div class="btn-group">
-                <a href="{{ route('products.show', $product->id) }}" class="btn btn-sm btn-info">View</a>
-                <a href="{{ route('products.edit', $product->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="delete-form" data-type="product">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                </form>
-            </div>
-        </td>
-    </tr>
-    @endforeach
-</tbody>
+        <tr>
+            <th>No</th>
+            <th>Image</th>
+            <th>Name</th>
+            <th>SPU</th>
+            <th>Category</th>
+            <th>Sale Status</th>
+            <th>Condition</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($products as $key => $product)
+        <tr data-id="{{ $product->id }}">
+            <td>{{ $key + 1 }}</td>
+            <td>
+                <div class="product-images-container d-flex flex-wrap gap-2">
+                    @forelse($product->images as $image)
+                        <img src="{{ asset('storage/' . $image->image_path) }}" 
+                            alt="Product Image {{ $loop->iteration }}" 
+                            style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                    @empty
+                        <img src="{{ asset('images/no-image.png') }}" 
+                            alt="No Image" 
+                            style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                    @endforelse
+                </div>
+            </td>
+            <td>
+                <a href="{{ route('products.show', $product->id) }}" 
+                style="color: #007bff; text-decoration: none;">
+                    {{ $product->name }}
+                </a>
+            </td>
+            <td>{{ $product->spu }}</td>
+            <td>
+                @if($product->fullCategoryId)
+                    @php
+                        $categoryIds = is_string($product->fullCategoryId) 
+                            ? json_decode($product->fullCategoryId) 
+                            : $product->fullCategoryId;
+                        $lastCategoryId = is_array($categoryIds) ? end($categoryIds) : null;
+                        $categoryName = $lastCategoryId 
+                            ? \App\Helpers\CategoryData::findCategoryName($lastCategoryId) 
+                            : 'Unknown Category';
+                    @endphp
+                    {{ $categoryName }}
+                @else
+                    -
+                @endif
+            </td>
+            <td>{{ $product->saleStatus }}</td>
+            <td>{{ $product->condition }}</td>
+            <td>{{ $product->variations->first()->price ? 'Rp ' . number_format($product->variations->first()->price, 0, ',', '.') : '-' }}</td>
+            <td>
+                <div class="btn-group">
+                    <a href="{{ route('products.edit', $product->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                    <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="delete-form" data-type="product">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
     </table>
     <!-- Product Analysis Table -->
     <table id="analysis-table" class="table table-bordered mt-2" style="border: 1px solid black; border-radius: 15px; overflow: hidden; display: none; background-color: #f8f9fa;">
@@ -200,9 +204,13 @@
         border-bottom: 3px solid black;
         color: black;
     }
+    .products-table a:hover {
+    text-decoration: underline !important;
+    }   
     </style>
 
 <script>
+
     document.addEventListener('DOMContentLoaded', function() {
         // Fungsi untuk menampilkan tabel
         function showTable(type) {

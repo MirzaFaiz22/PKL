@@ -23,6 +23,7 @@ class Product extends Model
         'minPurchase',
         'shortDescription',
         'description',
+        'sold_count',
         'has_variations',
         // Delivery Fields
         'is_preorder',
@@ -45,6 +46,7 @@ class Product extends Model
 
     protected $casts = [
         'hasSelfLife' => 'boolean',
+        'sold_count' => 'integer',
         'has_variations' => 'boolean',
         'fullCategoryId' => 'array'
     ];
@@ -89,5 +91,12 @@ class Product extends Model
     public function images()
     {
         return $this->hasMany(ProductImage::class);
+    }
+
+    public function getTotalSalesAttribute()
+    {
+        return $this->has_variations 
+            ? $this->variations()->sum('sold_count') 
+            : $this->sold_count;
     }
 }
