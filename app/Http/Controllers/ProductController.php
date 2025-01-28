@@ -299,17 +299,47 @@ class ProductController extends Controller
 
    // Add these methods to your existing ProductController class
 
-    public function edit(Product $product)
-    {
-        // Load necessary relationships
-        $product->load('variationTypes.values', 'variations', 'images');
-        return view('products.productEdit', compact('product'));
-    }
-
+   public function edit(Product $product)
+   {
+        
+       // Load necessary relationships
+       $product->load('variationTypes', 'variations', 'images');
+   
+       // Proses variasi tipe
+       $variantTypes = $product->variationTypes->map(function ($type) {
+           return [
+               'name' => $type->name,
+               'values' => is_string($type->values) 
+                   ? json_decode($type->values, true) 
+                   : $type->values ?? []
+           ];
+       })->toArray();
+   
+       // Pastikan selalu ada 2 tipe variasi
+       while (count($variantTypes) < 2) {
+           $variantTypes[] = [
+               'name' => '',
+               'values' => []
+           ];
+       }
+   
+       // Filter variations (exclude default variation with name '-')
+       $variations = $product->variations->where('name', '!=', '-')->values();
+   
+       // Debugging
+       \Log::info('Product Variant Types:', $variantTypes);
+       \Log::info('Product Variations:', $variations->toArray());
+   
+       return view('products.productEdit', [
+           'product' => $product,
+           'variantTypes' => $variantTypes,
+           'variations' => $variations
+       ]);
+   }
     public function update(Request $request, Product $product)
     {
         DB::beginTransaction();
-
+        dd( $request->all());
         try {
             // Define base validation rules
             $rules = [
