@@ -39,7 +39,7 @@ class ProductController extends Controller
         $rules = [
             'name' => 'required|max:300',
             'spu' => 'required|max:200|unique:products,spu',
-            'fullCategoryId' => 'nullable',
+            'fullCategoryId' => 'required',
             'brand' => 'nullable|max:20',
             'saleStatus' => 'required|in:FOR_SALE,HOT_SALE,NEW_ARRIVAL,SALE_ENDED',
             'condition' => 'required|in:NEW,USED',

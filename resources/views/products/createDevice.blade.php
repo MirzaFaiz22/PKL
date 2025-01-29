@@ -93,7 +93,7 @@
 
             <div class="form-group">
                 <label for="fullCategoryId">Master Category:</label>
-                <div class="category-dropdown">
+                <div class="category-dropdown" style="border-radius: 8px;">
                     <div class="dropdown-select" id="categorySelect">
                         <span>Select Master Category</span>
                         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -102,7 +102,12 @@
                     </div>
                     <div class="dropdown-menu" id="categoryMenu"></div>
                 </div>
-                <input type="hidden" id="fullCategoryId" name="fullCategoryId" />
+                <input type="hidden" 
+                    id="fullCategoryId" 
+                    name="fullCategoryId" 
+                    required
+                    oninvalid="this.setCustomValidity('Silakan pilih Master Category')"
+                    oninput="this.setCustomValidity('')">
             </div>
 
             <script src="{{ asset('js/category.js') }}"></script>
@@ -211,7 +216,6 @@
             <!-- Product Information-->
             <h4 style="font-weight: bold;">Product Information:</h4>
 
-            <!-- In your blade view file, e.g. create-product.blade.php -->
             <div class="form-group d-flex align-items-center mb-4">
                 <label for="product-variations" class="mr-2">The product has variations:</label>
                 <input type="checkbox" 
@@ -236,23 +240,129 @@
                         </div>
                     </div>
                     
+                    <!-- First Variation Type -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="variation-value-1">Option Value:</label>
-                            <div class="input-group">
+                            <label for="variation-values-1">Option Values:</label>
+                            <div class="tags-input-wrapper">
+                                <div class="tags-container" id="tags-container-1"></div>
                                 <input type="text" 
-                                    id="variation-value-1" 
-                                    class="form-control" 
-                                    placeholder="e.g., Red, Blue">
-                                <div class="input-group-append">
-                                    <button type="button" class="btn btn-primary" onclick="addValue(1)">Add</button>
-                                </div>
+                                    id="tag-input-1"
+                                    class="form-control tag-input" 
+                                    placeholder="Type and press Enter to add value">
+                                <input type="hidden" 
+                                    name="variantTypes[0][values]" 
+                                    id="values-hidden-1">
                             </div>
-                            <div id="values-list-1" class="mt-2 d-flex flex-wrap gap-2"></div>
-                            <!-- Hidden input to store values array -->
-                            <input type="hidden" name="variantTypes[0][values]" id="variation-values-1">
                         </div>
                     </div>
+
+                    <style>
+                    .tags-input-wrapper {
+                        border: 1px solid #ced4da;
+                        border-radius: 0.25rem;
+                        padding: 0.375rem;
+                        background: #fff;
+                    }
+
+                    .tags-container {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 5px;
+                        margin-bottom: 5px;
+                        min-height: 32px;
+                    }
+
+                    .tag {
+                        background: #e9ecef;
+                        border-radius: 3px;
+                        padding: 2px 8px;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                    }
+
+                    .tag-remove {
+                        cursor: pointer;
+                        color: #6c757d;
+                        font-weight: bold;
+                    }
+
+                    .tag-input {
+                        border: none !important;
+                        box-shadow: none !important;
+                        padding: 0 !important;
+                        margin-top: 5px;
+                    }
+
+                    .tag-input:focus {
+                        outline: none !important;
+                    }
+                    </style>
+
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        function parseValues(value) {
+                            if (!value) return [];
+                            return value.split(',')
+                                    .map(item => item.trim())
+                                    .filter(item => item);
+                        }
+                        
+                        function initializeTagsInput(containerId, inputId, hiddenId) {
+                            const tagsContainer = document.getElementById(containerId);
+                            const tagInput = document.getElementById(inputId);
+                            const hiddenInput = document.getElementById(hiddenId);
+                            
+                            // Ambil nilai awal dari hidden input yang sudah dibersihkan
+                            let tags = parseValues(hiddenInput.value);
+                            
+                            function renderTags() {
+                                tagsContainer.innerHTML = '';
+                                tags.forEach((tag, index) => {
+                                    const tagElement = document.createElement('span');
+                                    tagElement.className = 'tag';
+                                    tagElement.innerHTML = `
+                                        ${tag}
+                                        <span class="tag-remove" data-index="${index}">&times;</span>
+                                    `;
+                                    tagsContainer.appendChild(tagElement);
+                                });
+                                // Simpan sebagai string biasa dengan pemisah koma
+                                hiddenInput.value = tags.join(',');
+                            }
+                            
+                            // Add new tag
+                            tagInput.addEventListener('keydown', function(e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const value = this.value.trim();
+                                    if (value && !tags.includes(value)) {
+                                        tags.push(value);
+                                        renderTags();
+                                        this.value = '';
+                                    }
+                                }
+                            });
+                            
+                            // Remove tag
+                            tagsContainer.addEventListener('click', function(e) {
+                                if (e.target.classList.contains('tag-remove')) {
+                                    const index = parseInt(e.target.dataset.index);
+                                    tags.splice(index, 1);
+                                    renderTags();
+                                }
+                            });
+                            
+                            // Initial render
+                            renderTags();
+                        }
+                        
+                        // Initialize both variation types
+                        initializeTagsInput('tags-container-1', 'tag-input-1', 'values-hidden-1');
+                        initializeTagsInput('tags-container-2', 'tag-input-2', 'values-hidden-2');
+                    });
+                    </script>
                 </div>
 
                 <!-- Second Variation Type -->
@@ -270,44 +380,43 @@
                     
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="variation-value-2">Option Value:</label>
-                            <div class="input-group">
+                            <label for="variation-values-2">Option Values:</label>
+                            <div class="tags-input-wrapper">
+                                <div class="tags-container" id="tags-container-2"></div>
                                 <input type="text" 
-                                    id="variation-value-2" 
-                                    class="form-control" 
-                                    placeholder="e.g., S, M, L">
-                                <div class="input-group-append">
-                                    <button type="button" class="btn btn-primary" onclick="addValue(2)">Add</button>
-                                </div>
+                                    id="tag-input-2"
+                                    class="form-control tag-input" 
+                                    placeholder="Type and press Enter to add value">
+                                <input type="hidden" 
+                                    name="variantTypes[1][values]" 
+                                    id="values-hidden-2">
                             </div>
-                            <div id="values-list-2" class="mt-2 d-flex flex-wrap gap-2"></div>
-                            <!-- Hidden input to store values array -->
-                            <input type="hidden" name="variantTypes[1][values]" id="variation-values-2">
                         </div>
                     </div>
                 </div>
-
-                <!-- Variations Table -->
-                <div class="table-responsive mt-4">
-                    <table id="variations-table" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Default Price</th>
-                                <th>Available Stock</th>
-                                <th>MSKU</th>
-                                <th>Barcode</th>
-                            </tr>
-                        </thead>
-                        <tbody id="variations-body">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
             </div>
 
-            <!-- Base Fields (shown when no variations) -->
-            <div id="base-fields">
+            <!-- Rest of the variations table remains the same -->
+            <div class="table-responsive mt-4">
+                <table id="variations-table" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Default Price</th>
+                            <th>Available Stock</th>
+                            <th>MSKU</th>
+                            <th>Barcode</th>
+                            <th>Image</th>
+                        </tr>
+                    </thead>
+                    <tbody id="variations-body">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Base Fields -->
+            <div id="base-fields" style="display: block;">
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
@@ -327,64 +436,39 @@
                                         <div class="input-group-prepend">
                                             <span class="input-group-text">Rp</span>
                                         </div>
-                                        <input type="number" name="basePrice" class="form-control" placeholder="Please Enter">
+                                        <input type="number" 
+                                            name="basePrice" 
+                                            class="form-control" 
+                                            value="{{ old('basePrice') }}"
+                                            placeholder="Please Enter">
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="number" name="baseStock" class="form-control" placeholder="Should be between 0-999,999">
+                                    <input type="number" 
+                                        name="baseStock" 
+                                        class="form-control" 
+                                        value="{{ old('baseStock') }}"
+                                        placeholder="Should be between 0-999,999">
                                 </td>
                                 <td>
-                                    <input type="text" name="baseMsku" class="form-control" placeholder="Please Enter">
+                                    <input type="text" 
+                                        name="baseMsku" 
+                                        class="form-control" 
+                                        value="{{ old('baseMsku') }}"
+                                        placeholder="Please Enter">
                                 </td>
                                 <td>
-                                    <input type="text" name="baseBarcode" class="form-control" placeholder="Barcode only supports letters, numb...">
+                                    <input type="text" 
+                                        name="baseBarcode" 
+                                        class="form-control" 
+                                        value="{{ old('baseBarcode') }}"
+                                        placeholder="Barcode only supports letters, numb...">
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <!-- Media Settings Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Media Settings</h4>
-                </div>
-                <div class="card-body">
-                    <!-- Main Product Images -->
-                    <div class="mb-4">
-                        <label class="d-block mb-2">Product Image Max: 9</label>
-                        <div class="d-flex gap-3 align-items-center flex-wrap">
-                            <!-- Placeholder for uploading new images -->
-                            <div class="image-upload-box" style="width: 120px; height: 120px;">
-                            <input type="file" 
-                                class="product-image-input" 
-                                name="product_images[]" 
-                                accept="image/*" 
-                                style="display: none;" 
-                                multiple>
-                                <div class="upload-placeholder border d-flex align-items-center justify-content-center" 
-                                    style="width: 100%; height: 100%; cursor: pointer;">
-                                    <i class="fas fa-plus"></i>
-                                </div>
-                            </div>
-                            <!-- Container for displaying uploaded images -->
-                            <div class="product-image-container">
-                                <!-- Product images will be dynamically added here -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Variant Images -->
-                    <div id="variant-images-container" style="display: none;">
-                        <label class="d-block mb-2">Variant Images</label>
-                        <div id="variant-images-grid" class="d-flex flex-wrap gap-4">
-                            <!-- Will be populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
 
             <style>
             .product-image-container {
@@ -429,327 +513,471 @@
                 z-index: 10; /* Pastikan tombol hapus berada di atas gambar */
                 cursor: pointer;
             }
-
-
             </style>
 
-                <script>
-                // Store variation values
-                let variationValues = {
-                    1: [], // First variation type values
-                    2: []  // Second variation type values
-                };
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Existing tags input initialization code...
+                    document.getElementById('variation-type-1').addEventListener('input', generateVariationRows);
+                    document.getElementById('variation-type-2').addEventListener('input', generateVariationRows);
+                    document.getElementById('values-hidden-1').addEventListener('change', generateVariationRows);
+                    document.getElementById('values-hidden-2').addEventListener('change', generateVariationRows);
 
-                // Handle checkbox change
-                document.getElementById('product-variations').addEventListener('change', function(e) {
-                    const variationFields = document.getElementById('variation-fields');
-                    const baseFields = document.getElementById('base-fields');
-
-                    if (e.target.checked) {
-                        variationFields.style.display = 'block';
-                        baseFields.style.display = 'none';
-                    } else {
-                        variationFields.style.display = 'none';
-                        baseFields.style.display = 'block';
-                        // Clear all variation values
-                        variationValues = { 1: [], 2: [] };
-                        updateVariationLists();
+                    // Initial generation of variation rows if has variations is checked
+                    const hasVariationsCheckbox = document.getElementById('product-variations');
+                    if (hasVariationsCheckbox.checked) {
                         generateVariationRows();
-                        updateHiddenInputs();
-                    }
-                });
-
-                // Add variation value
-                function addValue(typeNumber) {
-                    const input = document.getElementById(`variation-value-${typeNumber}`);
-                    const value = input.value.trim();
-                    const typeInput = document.getElementById(`variation-type-${typeNumber}`);
-                    const typeName = typeInput.value.trim();
-
-                    if (!typeName) {
-                        alert('Please enter variation type first');
-                        return;
                     }
 
-                    if (value && !variationValues[typeNumber].includes(value)) {
-                        variationValues[typeNumber].push(value);
-                        input.value = ''; // Clear input
-                        updateVariationLists();
-                        generateVariationRows();
-                        updateHiddenInputs();
-                    }
-                }
+                    // Add listener for checkbox changes
+                    hasVariationsCheckbox.addEventListener('change', function(e) {
+                        const variationFields = document.getElementById('variation-fields');
+                        const baseFields = document.getElementById('base-fields');
 
-                // Remove variation value
-                function removeValue(typeNumber, value) {
-                    const index = variationValues[typeNumber].indexOf(value);
-                    if (index > -1) {
-                        variationValues[typeNumber].splice(index, 1);
-                        updateVariationLists();
-                        generateVariationRows();
-                        updateHiddenInputs();
-                    }
-                }
+                        variationFields.style.display = e.target.checked ? 'block' : 'none';
+                        baseFields.style.display = e.target.checked ? 'none' : 'block';
 
-                // Update hidden inputs with current values
-                function updateHiddenInputs() {
-                    [1, 2].forEach(typeNumber => {
-                        const hiddenInput = document.getElementById(`variation-values-${typeNumber}`);
-                        hiddenInput.value = JSON.stringify(variationValues[typeNumber]);
+                        if (e.target.checked) {
+                            generateVariationRows();
+                        }
                     });
-                }
 
-                // Update variation lists display
-                function updateVariationLists() {
-                    [1, 2].forEach(typeNumber => {
-                        const container = document.getElementById(`values-list-${typeNumber}`);
-                        container.innerHTML = '';
-
-                        variationValues[typeNumber].forEach(value => {
-                            const badge = document.createElement('span');
-                            badge.className = 'badge bg-light text-dark border me-2 mb-2';
-                            badge.innerHTML = `
-                                ${value}
-                                <button type="button" class="btn-close ms-2" 
-                                    onclick="removeValue(${typeNumber}, '${value}')"
-                                    style="font-size: 0.5rem;">×</button>
-                            `;
-                            container.appendChild(badge);
-                        });
-                    });
-                }
-
-                // Generate variation table rows
-                function generateVariationRows() {
-                    const tbody = document.getElementById('variations-body');
-                    tbody.innerHTML = '';
-
-                    // Get variation type names
-                    const type1Name = document.getElementById('variation-type-1').value || '';
-                    const type2Name = document.getElementById('variation-type-2').value || '';
-
-                    // Generate combinations
-                    let combinations = [];
-                    if (variationValues[1].length && variationValues[2].length) {
-                        // Both variation types have values
-                        variationValues[1].forEach(val1 => {
-                            variationValues[2].forEach(val2 => {
-                                combinations.push({
-                                    name: `${val1}/${val2}`,
-                                    combinations: {
-                                        [type1Name]: val1,
-                                        [type2Name]: val2
-                                    }
-                                });
-                            });
-                        });
-                    } else if (variationValues[1].length || variationValues[2].length) {
-                        // Only one variation type has values
-                        const activeValues = variationValues[1].length ? variationValues[1] : variationValues[2];
-                        const activeTypeName = variationValues[1].length ? type1Name : type2Name;
-                        combinations = activeValues.map(val => ({
-                            name: val,
-                            combinations: {
-                                [activeTypeName]: val
+                    // Also trigger generation when hidden inputs change (when tags are added/removed)
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === "attributes" && mutation.attributeName === "value") {
+                                generateVariationRows();
                             }
-                        }));
-                    }
-
-                    // Create rows
-                    combinations.forEach((combination, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${combination.name}</td>
-                            <td>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Rp</span>
-                                    </div>
-                                    <input type="number" 
-                                        name="variations[${index}][price]" 
-                                        class="form-control" 
-                                        placeholder="Please Enter"
-                                        required>
-                                </div>
-                            </td>
-                            <td>
-                                <input type="number" 
-                                    name="variations[${index}][stock]" 
-                                    class="form-control" 
-                                    placeholder="Should be between 0-999,999"
-                                    required>
-                            </td>
-                            <td>
-                                <input type="text" 
-                                    name="variations[${index}][msku]" 
-                                    class="form-control" 
-                                    placeholder="Please Enter"
-                                    required>
-                            </td>
-                            <td>
-                                <input type="text" 
-                                    name="variations[${index}][barcode]" 
-                                    class="form-control" 
-                                    placeholder="Barcode only supports letters, numb..."
-                                    required>
-                            </td>
-                            <td>
-                                <div class="variation-photo-section">
-                                    <div class="image-upload-container">
-                                        <label class="image-upload-box" style="width: 60px; height: 60px;">
-                                            <input type="file" 
-                                                class="variation-photos d-none" 
-                                                name="variations[${index}][photos][]"
-                                                accept="image/*"
-                                                multiple 
-                                                data-max-files="8"
-                                                data-variation-name="${combination.name}">
-                                            <div class="upload-placeholder">
-                                                <span class="plus-icon">+</span>
-                                            </div>
-                                        </label>
-                                        <div class="variation-photos-preview d-flex flex-wrap gap-2" 
-                                            id="preview-${index}">
-                                        </div>
-                                        <small class="text-muted d-block">
-                                            <span class="photos-count">Max 1</span>
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-                            <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
-                            <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
-                        `;
-                        tbody.appendChild(row);
+                        });
                     });
+
+                    // Observe both hidden inputs for changes
+                    const hiddenInput1 = document.getElementById('values-hidden-1');
+                    const hiddenInput2 = document.getElementById('values-hidden-2');
+
+                    observer.observe(hiddenInput1, { attributes: true });
+                    observer.observe(hiddenInput2, { attributes: true });
+                });
+
+                const existingVariations = [];
+
+                // Definisikan fungsi generateVariationRows sekali saja
+                function generateVariationRows() {
+                const tbody = document.getElementById('variations-body');
+                tbody.innerHTML = '';
+
+                // Get variation type names
+                const type1Name = document.getElementById('variation-type-1').value || '';
+                const type2Name = document.getElementById('variation-type-2').value || '';
+
+                // Get values from hidden inputs
+                const values1 = document.getElementById('values-hidden-1').value.split(',').filter(item => item.trim());
+                const values2 = document.getElementById('values-hidden-2').value.split(',').filter(item => item.trim());
+
+                // Generate combinations
+                let combinations = [];
+                if (values1.length && values2.length) {
+                values1.forEach(val1 => {
+                values2.forEach(val2 => {
+                    combinations.push({
+                        name: `${val1}/${val2}`,
+                        combinations: {
+                            [type1Name]: val1,
+                            [type2Name]: val2
+                        }
+                    });
+                });
+                });
+                } else if (values1.length || values2.length) {
+                const activeValues = values1.length ? values1 : values2;
+                const activeTypeName = values1.length ? type1Name : type2Name;
+                combinations = activeValues.map(val => ({
+                name: val,
+                combinations: {
+                    [activeTypeName]: val
+                }
+                }));
                 }
 
-                // Form submission handler
-                document.querySelector('form').addEventListener('submit', function(e) {
-                    e.preventDefault();
+                // Create rows
+                combinations.forEach((combination, index) => {
+                const existingVariation = existingVariations.find(v => v.name === combination.name);
 
-                    const formData = new FormData(this);
+                let imagesPreviewHtml = '';
+                if (existingVariation && existingVariation.variant_image_path) {
+                imagesPreviewHtml = `
+                    <div class="existing-image position-relative" style="margin: 2px;">
+                        <img src="/storage/${existingVariation.variant_image_path}" 
+                            alt="${combination.name}" 
+                            style="width: 50px; height: 50px; object-fit: cover;">
+                        <span class="remove-variation-image position-absolute top-0 end-0" 
+                            style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
+                            data-image-id="${existingVariation.id}">
+                            <i class="fas fa-times" style="font-size: 12px;"></i>
+                        </span>
+                        <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
+                    </div>
+                `;
+                }
 
-                    // Kirim form
-                    fetch(this.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Form berhasil dikirim:', data);
-                    })
-                    .catch(error => {
-                        console.error('Terjadi kesalahan saat mengirim form:', error);
-                    });
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                <td>${combination.name}</td>
+                <td>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Rp</span>
+                        </div>
+                        <input type="number" 
+                            name="variations[${index}][price]" 
+                            class="form-control" 
+                            value="${existingVariation ? existingVariation.price : ''}"
+                            placeholder="Please Enter"
+                            required>
+                    </div>
+                </td>
+                <td>
+                    <input type="number" 
+                        name="variations[${index}][stock]" 
+                        class="form-control" 
+                        value="${existingVariation ? existingVariation.stock : ''}"
+                        placeholder="Should be between 0-999,999"
+                        required>
+                </td>
+                <td>
+                    <input type="text" 
+                        name="variations[${index}][msku]" 
+                        class="form-control" 
+                        value="${existingVariation ? existingVariation.msku : ''}"
+                        placeholder="Please Enter"
+                        required>
+                </td>
+                <td>
+                    <input type="text" 
+                        name="variations[${index}][barcode]" 
+                        class="form-control" 
+                        value="${existingVariation ? existingVariation.barcode : ''}"
+                        placeholder="Barcode only supports letters, numb..."
+                        required>
+                </td>
+
+                <td>
+                    <div class="variation-photo-section">
+                        <div class="image-upload-container">
+                            <!-- Upload New Image -->
+                            <label class="image-upload-box d-flex justify-content-center align-items-center" 
+                                style="width: 60px; height: 60px; border: 1px dashed #ccc; cursor: pointer;">
+                                <input type="file" 
+                                class="variation-photos d-none" 
+                                name="variations[${index}][photos][]"
+                                accept="image/*"
+                                multiple
+                                data-preview-id="preview-${index}"
+                                data-variation-name="${combination.name}">
+                                <span class="plus-icon">+</span>
+                            </label>
+
+                            <!-- Images Preview Area -->
+                            <div class="variation-photos-preview mt-2" id="preview-${index}">
+                                ${existingVariation && existingVariation.variant_image_path ? `
+                                    <div class="existing-image position-relative d-inline-block me-2">
+                                        <img src="/storage/${existingVariation.variant_image_path}" 
+                                            alt="${combination.name}" 
+                                            style="width: 50px; height: 50px; object-fit: cover;">
+                                        <span class="remove-variation-image position-absolute top-0 end-0" 
+                                            style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
+                                            data-image-id="${existingVariation.id}">
+                                            <i class="fas fa-times" style="font-size: 12px;"></i>
+                                        </span>
+                                        <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
+                <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
+                ${existingVariation ? `<input type="hidden" name="variations[${index}][id]" value="${existingVariation.id}">` : ''}
+                `;
+                tbody.appendChild(row);
                 });
+                // Tambahkan di akhir fungsi generateVariationRows():
 
-                // Product Images Upload
-                document.querySelector('.product-image-input').addEventListener('change', function(event) {
-                    const productImageContainer = document.querySelector('.product-image-container');
-                    const imageUploadBox = this.closest('.image-upload-box');
-                    const files = Array.from(event.target.files).slice(0, 8); // Batasi maks 8 gambar
+                // Handle new image upload preview for variations
+                document.querySelectorAll('.variation-photos').forEach(input => {
+                    input.addEventListener('change', function(e) {
+                        const previewId = this.getAttribute('data-preview-id');
+                        const previewContainer = document.getElementById(previewId);
+                        const files = Array.from(this.files);
 
-                    // Cek total gambar yang sudah ada
-                    const existingImages = productImageContainer.querySelectorAll('.image-preview').length;
-                    const remainingSlots = 8 - existingImages;
-
-                    files.slice(0, remainingSlots).forEach(file => {
-                        if (file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const previewDiv = document.createElement('div');
-                                previewDiv.className = 'image-preview position-relative';
-                                previewDiv.innerHTML = `
-                                    <img src="${e.target.result}" alt="Product Image">
-                                    <span class="remove-image text-danger">
-                                        <i class="fas fa-times-circle"></i>
-                                    </span>
-                                `;
-
-                                // Tambahkan event listener untuk tombol hapus
-                                previewDiv.querySelector('.remove-image').addEventListener('click', function() {
-                                    productImageContainer.removeChild(previewDiv);
-                                    // Reset input jika semua gambar dihapus
-                                    if (productImageContainer.children.length === 0) {
-                                        event.target.value = '';
-                                    }
-                                });
-
-                                productImageContainer.appendChild(previewDiv);
-
-                                // Sembunyikan upload box jika sudah 8 gambar
-                                if (productImageContainer.children.length >= 8) {
-                                    imageUploadBox.style.display = 'none';
-                                }
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
-
-                    // Tampilkan pesan jika melebihi 8 gambar
-                    if (files.length > remainingSlots) {
-                        alert(`Anda hanya dapat mengunggah maksimal 8 gambar. ${files.length - remainingSlots} gambar diabaikan.`);
-                    }
-                });
-
-                // Tambahkan event listener untuk upload placeholder
-                document.querySelector('.upload-placeholder').addEventListener('click', function() {
-                    this.closest('.image-upload-box').querySelector('.product-image-input').click();
-                });
-                // Variant Images Upload
-                document.getElementById('variations-body').addEventListener('change', function(e) {
-                    if (e.target.classList.contains('variation-photos')) {
-                        const fileInput = e.target;
-                        const previewContainer = fileInput.closest('.image-upload-container').querySelector('.variation-photos-preview');
-                        const photosCountSpan = fileInput.closest('.image-upload-container').querySelector('.photos-count');
-                        
-                        // Bersihkan preview sebelumnya
+                        // Clear previous previews
                         previewContainer.innerHTML = '';
-                        
-                        // Ambil hanya file pertama (max 1 foto)
-                        const file = fileInput.files[0];
-                        
-                        if (file && file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = function(event) {
-                                const imgWrapper = document.createElement('div');
-                                imgWrapper.className = 'position-relative me-2 mb-2';
-                                imgWrapper.innerHTML = `
-                                    <img src="${event.target.result}" 
-                                        style="width: 60px; height: 60px; object-fit: cover;" 
-                                        class="img-thumbnail">
-                                    <button type="button" 
-                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-photo" 
-                                            style="padding: 0 5px;">×</button>
-                                `;
-                                
-                                // Tambahkan tombol hapus
-                                imgWrapper.querySelector('.remove-photo').addEventListener('click', () => {
-                                    previewContainer.innerHTML = '';
-                                    fileInput.value = ''; // Reset input file
-                                });
-                                
-                                previewContainer.appendChild(imgWrapper);
-                                
-                                // Update tampilan jumlah foto
-                                photosCountSpan.textContent = '1/1';
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    }
+
+                        files.forEach(file => {
+                            if (file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const previewDiv = document.createElement('div');
+                                    previewDiv.className = 'variation-image-preview position-relative d-inline-block me-2';
+                                    previewDiv.innerHTML = `
+                                        <img src="${e.target.result}" 
+                                            alt="Variation Image" 
+                                            style="width: 50px; height: 50px; object-fit: cover;">
+                                        <span class="remove-variation-image position-absolute top-0 end-0" 
+                                            style="cursor: pointer; background: rgba(255,255,255,0.8); 
+                                            border-radius: 50%; padding: 2px;">
+                                            <i class="fas fa-times" style="font-size: 12px;"></i>
+                                        </span>
+                                    `;
+                                    
+                                    // Add remove functionality
+                                    const removeButton = previewDiv.querySelector('.remove-variation-image');
+                                    removeButton.addEventListener('click', () => {
+                                        previewContainer.removeChild(previewDiv);
+                                        // Optional: Remove corresponding file from input
+                                        const dataTransfer = new DataTransfer();
+                                        Array.from(input.files)
+                                            .filter(f => f !== file)
+                                            .forEach(f => dataTransfer.items.add(f));
+                                        input.files = dataTransfer.files;
+                                    });
+
+                                    previewContainer.appendChild(previewDiv);
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        });
+                    });
                 });
 
-                // Optional: Tampilkan kontainer variant images saat checkbox variasi dicentang
-                document.getElementById('product-variations').addEventListener('change', function(e) {
-                    const variantImagesContainer = document.getElementById('variant-images-container');
-                    variantImagesContainer.style.display = this.checked ? 'block' : 'none';
+                // Add event listeners for removing variation images
+                document.querySelectorAll('.remove-variation-image').forEach(button => {
+                button.addEventListener('click', function() {
+                const imageId = this.dataset.imageId;
+                const container = this.closest('.existing-image');
+                if (container) {
+                    // Add to removed images list
+                    const removedImagesInput = document.getElementById('removed-variation-images') || 
+                        document.createElement('input');
+                    removedImagesInput.type = 'hidden';
+                    removedImagesInput.id = 'removed-variation-images';
+                    removedImagesInput.name = 'removed_variation_images[]';
+                    removedImagesInput.value = imageId;
+                    document.querySelector('form').appendChild(removedImagesInput);
+                    
+                    // Remove the image container
+                    container.remove();
+                }
+                });
+                });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                const hasVariationsCheckbox = document.getElementById('product-variations');
+                const variationFields = document.getElementById('variation-fields');
+                const baseFields = document.getElementById('base-fields');
+                const variationsTable = document.getElementById('variations-table');
+                const variationsBody = document.getElementById('variations-body');
+                const baseTable = document.querySelector('#base-fields table');
+
+                // Reset variasi
+                function resetVariations() {
+                // Reset variant type inputs
+                document.getElementById('variation-type-1').value = '';
+                document.getElementById('variation-type-2').value = '';
+
+                // Reset hidden inputs untuk tag values
+                document.getElementById('values-hidden-1').value = '';
+                document.getElementById('values-hidden-2').value = '';
+
+                // Reset tags containers
+                document.getElementById('tags-container-1').innerHTML = '';
+                document.getElementById('tags-container-2').innerHTML = '';
+                }
+
+                hasVariationsCheckbox.addEventListener('change', function(e) {
+                if (e.target.checked) {
+                // Tampilkan area variasi dan tabel variasi
+                variationFields.style.display = 'block';
+                variationsTable.style.display = 'table';
+
+                // Sembunyikan area base dan tabel base
+                baseFields.style.display = 'none';
+                baseTable.style.display = 'none';
+
+                // Jika sebelumnya tidak ada variasi, generate baris kosong
+                if (variationsBody.innerHTML.trim() === '') {
+                generateVariationRows();
+                }
+                } else {
+                // Konfirmasi penghapusan variasi
+                const confirmReset = confirm('Apakah Anda yakin ingin menghapus semua variasi?');
+
+                if (confirmReset) {
+                // Sembunyikan area variasi dan tabel variasi
+                variationFields.style.display = 'none';
+                variationsTable.style.display = 'none';
+
+                // Tampilkan area base dan tabel base
+                baseFields.style.display = 'block';
+                baseTable.style.display = 'table';
+
+                // Kosongkan baris variasi
+                variationsBody.innerHTML = '';
+
+                // Reset input variasi
+                resetVariations();
+                } else {
+                // Jika dibatalkan, kembalikan checkbox ke state sebelumnya
+                this.checked = true;
+                }
+                }
+                });
+
+                // Kondisi awal saat halaman dimuat
+                if (hasVariationsCheckbox.checked) {
+                variationFields.style.display = 'block';
+                variationsTable.style.display = 'table';
+                baseFields.style.display = 'none';
+                baseTable.style.display = 'none';
+
+                // Generate baris variasi jika belum ada
+                if (variationsBody.innerHTML.trim() === '') {
+                generateVariationRows();
+                }
+                } else {
+                variationFields.style.display = 'none';
+                variationsTable.style.display = 'none';
+                baseFields.style.display = 'block';
+                baseTable.style.display = 'table';
+                }
                 });
             </script>
+
+
+
+
+
+<!-- Media Settings Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h4 class="mb-0">Media Settings</h4>
+    </div>
+    <div class="card-body">
+        <!-- Main Product Images -->
+        <div class="mb-4">
+            <label class="d-block mb-2">Product Image Max: 9</label>
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <!-- Placeholder for uploading new images -->
+                <div class="image-upload-box" style="width: 120px; height: 120px;">
+                    <input type="file" 
+                        class="product-image-input" 
+                        name="product_images[]" 
+                        accept="image/*" 
+                        style="display: none;" 
+                        multiple>
+                    <div class="upload-placeholder border d-flex align-items-center justify-content-center" 
+                        style="width: 100%; height: 100%; cursor: pointer;">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                </div>
+                
+                <!-- Container for displaying uploaded images -->
+                <div class="product-image-container d-flex gap-3 flex-wrap">
+                    <!-- Images will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add a hidden input for tracking removed images -->
+<input type="hidden" name="removed_images" id="removed-images" value="">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const maxImages = 9;
+    const imageInput = document.querySelector('.product-image-input');
+    const uploadPlaceholder = document.querySelector('.upload-placeholder');
+    const imageContainer = document.querySelector('.product-image-container');
+    const removedImagesInput = document.getElementById('removed-images') || 
+        document.createElement('input');
+    
+    removedImagesInput.type = 'hidden';
+    removedImagesInput.id = 'removed-images';
+    removedImagesInput.name = 'removed_images';
+    removedImagesInput.value = '';
+    
+    // Append hidden input if not already in the form
+    if (!document.getElementById('removed-images')) {
+        document.querySelector('form').appendChild(removedImagesInput);
+    }
+
+    // Handle click on upload placeholder
+    uploadPlaceholder.addEventListener('click', function() {
+        const currentImages = imageContainer.querySelectorAll('.image-preview').length;
+        if (currentImages < maxImages) {
+            imageInput.click();
+        } else {
+            alert('Maximum 9 images allowed');
+        }
+    });
+
+    // Handle file selection
+    imageInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        const currentImages = imageContainer.querySelectorAll('.image-preview').length;
+        
+        if (currentImages + files.length > maxImages) {
+            alert(`You can only add ${maxImages - currentImages} more images`);
+            return;
+        }
+
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview position-relative';
+                    previewDiv.style.width = '120px';
+                    previewDiv.style.height = '120px';
+                    
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" 
+                            alt="Product Image" 
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        <span class="remove-image text-danger position-absolute top-0 end-0">
+                            <i class="fas fa-times-circle"></i>
+                        </span>
+                    `;
+                    
+                    imageContainer.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // Handle image removal
+    imageContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-image')) {
+            const previewDiv = e.target.closest('.image-preview');
+            const imageId = e.target.closest('.remove-image').getAttribute('data-image-id');
+            
+            // If it's an existing image, add to removed images list
+            if (imageId) {
+                const currentRemoved = removedImagesInput.value ? 
+                    removedImagesInput.value.split(',') : [];
+                currentRemoved.push(imageId);
+                removedImagesInput.value = currentRemoved.join(',');
+            }
+            
+            previewDiv.remove();
+        }
+    });
+});
+</script>
             
             <style>
                 .section-header {
