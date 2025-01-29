@@ -300,46 +300,37 @@ class ProductController extends Controller
    // Add these methods to your existing ProductController class
 
    public function edit(Product $product)
-   {
-        
-       // Load necessary relationships
-       $product->load('variationTypes', 'variations', 'images');
-   
-       // Proses variasi tipe
-       $variantTypes = $product->variationTypes->map(function ($type) {
-           return [
-               'name' => $type->name,
-               'values' => is_string($type->values) 
-                   ? json_decode($type->values, true) 
-                   : $type->values ?? []
-           ];
-       })->toArray();
-   
-       // Pastikan selalu ada 2 tipe variasi
-       while (count($variantTypes) < 2) {
-           $variantTypes[] = [
-               'name' => '',
-               'values' => []
-           ];
-       }
-   
-       // Filter variations (exclude default variation with name '-')
-       $variations = $product->variations->where('name', '!=', '-')->values();
-   
-       // Debugging
-       \Log::info('Product Variant Types:', $variantTypes);
-       \Log::info('Product Variations:', $variations->toArray());
-   
-       return view('products.productEdit', [
-           'product' => $product,
-           'variantTypes' => $variantTypes,
-           'variations' => $variations
-       ]);
-   }
+{
+    // Load necessary relationships
+    $product->load('variationTypes', 'variations', 'images');
+
+    // Proses variasi tipe
+    $variantTypes = $product->variationTypes->map(function ($type) {
+        return [
+            'name' => $type->name,
+            'values' => is_string($type->values) ? $type->values : json_encode($type->values ?? [])
+        ];
+    })->toArray();
+    
+    // Pastikan selalu ada 2 tipe variasi
+    while (count($variantTypes) < 2) {
+        $variantTypes[] = [
+            'name' => '',
+            'values' => ''
+        ];
+    }
+
+    // Filter variations dan pastikan menjadi collection kosong jika null
+    $variations = $product->variations ? 
+        $product->variations->where('name', '!=', '-')->values() : 
+        collect([]);
+    
+    return view('products.productEdit', compact('product', 'variantTypes', 'variations'));
+}
     public function update(Request $request, Product $product)
     {
         DB::beginTransaction();
-        dd( $request->all());
+       
         try {
             // Define base validation rules
             $rules = [
@@ -480,13 +471,17 @@ class ProductController extends Controller
 
                 // Store new variations
                 foreach ($variations as $index => $variation) {
-                    // Handle variant image
-                    $variantImagePath = null;
-                    if ($request->hasFile("variant_images.$index")) {
-                        $variantImage = $request->file("variant_images.$index");
-                        $variantImagePath = $variantImage->store('variant-images', 'public');
+                    if ($request->hasFile("variations.$index.photos")) {
+                        $photo = $request->file("variations.$index.photos");
+                        $variantImagePath = $photo->store('variant-images', 'public');
+            
+                        $variation['variant_image_path'] = $variantImagePath;
+                    } elseif (isset($variation['existing_variant_image'])) {
+                        $variantImagePath = $variation['existing_variant_image'];
+                    } else {
+                        $variantImagePath = null;
                     }
-
+            
                     ProductVariation::create([
                         'product_id' => $product->id,
                         'name' => $variation['name'],
@@ -494,10 +489,10 @@ class ProductController extends Controller
                         'stock' => $variation['stock'],
                         'msku' => $variation['msku'],
                         'barcode' => $variation['barcode'] ?? null,
-                        'combinations' => is_string($variation['combinations']) 
-                            ? $variation['combinations'] 
+                        'combinations' => is_string($variation['combinations'])
+                            ? $variation['combinations']
                             : json_encode($variation['combinations']),
-                        'variant_image_path' => $variantImagePath
+                        'variant_image_path' => $variantImagePath,
                     ]);
                 }
             } else {

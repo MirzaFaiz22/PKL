@@ -99,4 +99,34 @@ class Product extends Model
             ? $this->variations()->sum('sold_count') 
             : $this->sold_count;
     }
+
+    public function getCategoryPath()
+    {
+        if (!$this->fullCategoryId) {
+            return [];
+        }
+        
+        $categoryIds = is_string($this->fullCategoryId) 
+            ? json_decode($this->fullCategoryId, true) 
+            : $this->fullCategoryId;
+        
+        // Definisikan kategori secara manual sesuai struktur data di JavaScript
+        $categoriesMap = [
+            "100643" => "Books & Magazines",
+            "100777" => "Books",
+            "100778" => "E-Books",
+            "100779" => "Others",
+            "101551" => "Language Learning & Dictionaries",
+            "101560" => "Science & Maths"
+        ];
+        
+        $categoryPath = [];
+        foreach ($categoryIds as $id) {
+            if (isset($categoriesMap[$id])) {
+                $categoryPath[] = $categoriesMap[$id];
+            }
+        }
+        
+        return $categoryPath;
+    }
 }
