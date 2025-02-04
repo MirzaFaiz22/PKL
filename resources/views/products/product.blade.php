@@ -24,15 +24,18 @@
         <div class="col-md-2">
             <select class="form-control" id="category-filter">
                 <option value="">Kategori</option>
-                <option value="Ads">Ads</option>
-                <option value="Automation">Automation</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-control" id="type-filter">
-                <option value="">Type</option>
-                <option value="product">Product</option>
-                <option value="service">Service</option>
+                
+                <!-- Product Categories -->
+                <optgroup id="product-categories" label="Product Categories">
+
+                </optgroup>
+                
+                <!-- Service Categories -->
+                <optgroup id="service-categories" label="Service Categories" style="display: none;">
+                    @foreach($services->pluck('kategori')->unique() as $category)
+                        <option value="{{ $category }}">{{ $category }}</option>
+                    @endforeach
+                </optgroup>
             </select>
         </div>
         <div class="col-md-1">
@@ -87,20 +90,24 @@
                 </a>
             </td>
             <td>{{ $product->spu }}</td>
-            <td>
+            <td data-category-id="{{ $product->fullCategoryId ? json_encode(is_string($product->fullCategoryId) ? json_decode($product->fullCategoryId, true) : $product->fullCategoryId) : '' }}">
                 @if($product->fullCategoryId)
-                    @php
+                    @php 
                         $categoryIds = is_string($product->fullCategoryId) 
-                            ? json_decode($product->fullCategoryId) 
-                            : $product->fullCategoryId;
-                        $lastCategoryId = is_array($categoryIds) ? end($categoryIds) : null;
+                            ? json_decode($product->fullCategoryId, true) 
+                            : $product->fullCategoryId; 
+                        
+                        $lastCategoryId = is_array($categoryIds) 
+                            ? end($categoryIds) 
+                            : $categoryIds; 
+                        
                         $categoryName = $lastCategoryId 
-                            ? \App\Helpers\CategoryData::findCategoryName($lastCategoryId) 
-                            : 'Unknown Category';
-                    @endphp
-                    {{ $categoryName }}
-                @else
-                    -
+                            ? \App\Helpers\CategoryData::findCategoryName((string)$lastCategoryId) 
+                            : 'Unknown Category'; 
+                    @endphp 
+                    {{ $categoryName }} 
+                @else 
+                    - 
                 @endif
             </td>
             <td>{{ $product->saleStatus }}</td>
@@ -210,105 +217,174 @@
     </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Populate Product Categories Dynamically
+    function populateProductCategories() {
+        const productCategoryGroup = document.getElementById('product-categories');
+        
+        // Clear existing options first
+        productCategoryGroup.innerHTML = '';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Fungsi untuk menampilkan tabel
-        function showTable(type) {
-            // Sembunyikan semua tabel
-            ['products', 'analysis', 'services'].forEach(tableType => {
-                const table = document.getElementById(`${tableType}-table`);
-                const tabLink = document.getElementById(`btn-${tableType}`);
+        // Retrieve product categories from the backend (assuming a global or passed variable)
+        const categories = @json(\App\Helpers\CategoryData::getProductCategoryOptions());
+
+        // Populate category dropdown
+        Object.entries(categories).forEach(([id, name]) => {
+            const option = document.createElement('option');
+            option.value = id;  // Use category ID for matching
+            option.textContent = name;
+            productCategoryGroup.appendChild(option);
+        });
+    }
+
+    // Fungsi untuk menampilkan tabel
+    function showTable(type) {
+        // Sembunyikan semua tabel
+        ['products', 'analysis', 'services'].forEach(tableType => {
+            const table = document.getElementById(`${tableType}-table`);
+            const tabLink = document.getElementById(`btn-${tableType}`);
+            
+            if (tableType === type) {
+                table.style.display = 'table';
+                tabLink.classList.add('active');
                 
-                if (tableType === type) {
-                    table.style.display = 'table';
-                    tabLink.classList.add('active');
-                } else {
-                    table.style.display = 'none';
-                    tabLink.classList.remove('active');
-                }
-            });
-        }
-
-        // Tambahkan event listener ke tab
-        ['btn-products', 'btn-analysis', 'btn-services'].forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const type = btnId.replace('btn-', '');
-                    showTable(type);
-                });
+                // Update category filter based on selected tab
+                updateCategoryFilter(type);
+            } else {
+                table.style.display = 'none';
+                tabLink.classList.remove('active');
             }
         });
+    }
 
-        // Default tampilkan tabel produk
-        showTable('products');
+    // Fungsi untuk mengupdate kategori filter berdasarkan tab
+    function updateCategoryFilter(type) {
+        const categoryFilter = document.getElementById('category-filter');
+        const productCategoryGroup = document.getElementById('product-categories');
+        const serviceCategoryGroup = document.getElementById('service-categories');
 
-        // Fungsi delete item
-        function deleteItem(type, id) {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const url = type === 'product' ? `/products/${id}` : `/services/${id}`;
+        // Reset filter
+        categoryFilter.value = '';
 
-            fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': token,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => {
-                location.reload(); // Reload page after delete
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                location.reload(); // Reload even on error
-            });
+        if (type === 'services') {
+            // Sembunyikan kategori produk, tampilkan kategori service
+            productCategoryGroup.style.display = 'none';
+            serviceCategoryGroup.style.display = 'block';
+        } else {
+            // Tampilkan kategori produk, sembunyikan kategori service
+            productCategoryGroup.style.display = 'block';
+            serviceCategoryGroup.style.display = 'none';
         }
+    }
 
-        // Tambahkan event listener untuk tombol delete
-        document.querySelectorAll('.delete-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
+    // Tambahkan event listener ke tab
+    ['btn-products', 'btn-analysis', 'btn-services'].forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const type = this.getAttribute('data-type');
-                const id = this.closest('tr').getAttribute('data-id');
-                deleteItem(type, id);
-            });
-        });
-
-        // Fungsionalitas filter
-        const filterBtn = document.getElementById('filter-btn');
-        if (filterBtn) {
-            filterBtn.addEventListener('click', function() {
-                const searchText = document.getElementById('search-input').value.toLowerCase();
-                const categoryFilter = document.getElementById('category-filter').value.toLowerCase();
-                const typeFilter = document.getElementById('type-filter').value.toLowerCase();
-
-                // Filter untuk tabel produk
-                document.querySelectorAll('#products-table tbody tr').forEach(row => {
-                    const name = row.cells[2].textContent.toLowerCase();
-                    const saleStatus = row.cells[4].textContent.toLowerCase();
-                    
-                    const nameMatch = name.includes(searchText);
-                    const categoryMatch = !categoryFilter || saleStatus.includes(categoryFilter);
-                    const typeMatch = !typeFilter; // Untuk produk, kita abaikan type filter
-
-                    row.style.display = (nameMatch && categoryMatch && typeMatch) ? '' : 'none';
-                });
-
-                // Filter untuk tabel service
-                document.querySelectorAll('#services-table tbody tr').forEach(row => {
-                    const name = row.cells[1].textContent.toLowerCase();
-                    const category = row.cells[2].textContent.toLowerCase();
-                    
-                    const nameMatch = name.includes(searchText);
-                    const categoryMatch = !categoryFilter || category.includes(categoryFilter);
-                    const typeMatch = !typeFilter || typeFilter === 'service';
-
-                    row.style.display = (nameMatch && categoryMatch && typeMatch) ? '' : 'none';
-                });
+                const type = btnId.replace('btn-', '');
+                showTable(type);
             });
         }
     });
+
+    // Populate product categories when the page loads
+    populateProductCategories();
+
+    // Default tampilkan tabel produk
+    showTable('products');
+
+    // Fungsi delete item
+    function deleteItem(type, id) {
+        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const url = type === 'product' ? `/products/${id}` : `/services/${id}`;
+
+        fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            location.reload(); // Reload page after delete
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            location.reload(); // Reload even on error
+        });
+    }
+
+    // Tambahkan event listener untuk tombol delete
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const type = this.getAttribute('data-type');
+            const id = this.closest('tr').getAttribute('data-id');
+            deleteItem(type, id);
+        });
+    });
+
+    // Fungsionalitas filter
+    const filterBtn = document.getElementById('filter-btn');
+    if (filterBtn) {
+        filterBtn.addEventListener('click', function() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const categoryFilter = document.getElementById('category-filter').value.toLowerCase().trim();
+
+            // Tentukan tabel yang sedang aktif
+            const activeTables = ['products-table', 'analysis-table', 'services-table']
+                .filter(tableId => document.getElementById(tableId).style.display !== 'none');
+
+            // Loop through active tables
+            activeTables.forEach(tableId => {
+                const table = document.getElementById(tableId);
+                
+                // Pilih baris tabel yang sesuai
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    let nameMatch = true;
+                    let categoryMatch = true;
+
+                    // Logika pencarian berbeda untuk setiap jenis tabel
+                    if (tableId === 'products-table' || tableId === 'analysis-table') {
+                        // Untuk tabel produk
+                        const name = row.cells[2].textContent.toLowerCase();
+                        const fullCategoryId = row.cells[4].getAttribute('data-category-id');
+
+                        // Name matching
+                        nameMatch = searchText === '' || name.includes(searchText);
+
+                        // Category matching
+                        // Check if fullCategoryId exists and matches the filter
+                        if (categoryFilter) {
+                            try {
+                                // Parse the category ID array stored as a string
+                                const categoryIds = fullCategoryId ? JSON.parse(fullCategoryId) : [];
+                                categoryMatch = categoryIds.includes(categoryFilter);
+                            } catch (error) {
+                                console.error('Error parsing category IDs:', error);
+                                categoryMatch = false;
+                            }
+                        }
+                    } else if (tableId === 'services-table') {
+                        // Untuk tabel service - gunakan toLowerCase untuk mencocokkan kategori
+                        const name = row.cells[1].textContent.toLowerCase();
+                        const category = row.cells[2].textContent.toLowerCase();
+
+                        nameMatch = searchText === '' || name.includes(searchText);
+                        categoryMatch = categoryFilter === '' || category.includes(categoryFilter);
+                    }
+
+                    // Tampilkan atau sembunyikan baris
+                    row.style.display = (nameMatch && categoryMatch) ? '' : 'none';
+                });
+            });
+        });
+    }
+});
 </script>
 @stop

@@ -91,26 +91,120 @@
                 <small>0/200</small>
             </div>
 
-            <div class="form-group">
-                <label for="fullCategoryId">Master Category:</label>
-                <div class="category-dropdown" style="border-radius: 8px;">
-                    <div class="dropdown-select" id="categorySelect">
-                        <span>Select Master Category</span>
-                        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </div>
-                    <div class="dropdown-menu" id="categoryMenu"></div>
-                </div>
-                <input type="hidden" 
-                    id="fullCategoryId" 
-                    name="fullCategoryId" 
-                    required
-                    oninvalid="this.setCustomValidity('Silakan pilih Master Category')"
-                    oninput="this.setCustomValidity('')">
-            </div>
+            <!-- HTML -->
+<div class="form-group">
+    <label for="fullCategoryId">Master Category:</label>
+    <div class="category-dropdown" style="border-radius: 8px;">
+        <div class="dropdown-select" id="categorySelect">
+            <span>Select Master Category</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+            </svg>
+        </div>
+        <div class="dropdown-menu" id="categoryMenu"></div>
+    </div>
+    <input type="hidden" 
+        id="fullCategoryId" 
+        name="fullCategoryId" 
+        required
+        oninvalid="this.setCustomValidity('Silakan pilih Master Category')"
+        oninput="this.setCustomValidity('')">
+</div>
 
-            <script src="{{ asset('js/category.js') }}"></script>
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetchCategories();
+});
+
+async function fetchCategories() {
+    try {
+        const response = await fetch('/products/get-categories');
+        const data = await response.json();
+        if (data.success) {
+            populateDropdown(data.data);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function populateDropdown(categories) {
+   const menu = document.getElementById('categoryMenu');
+   const select = document.getElementById('categorySelect');
+   const hiddenInput = document.getElementById('fullCategoryId');
+   
+   function addCategoryWithChildren(category, level = 0) {
+       // Add parent
+       const item = document.createElement('div');
+       item.className = 'dropdown-item';
+       item.textContent = '  '.repeat(level) + category.name;
+       item.dataset.value = category.id;
+       
+       item.onclick = function() {
+           select.querySelector('span').textContent = category.name;
+           hiddenInput.value = category.id;
+           menu.style.display = 'none';
+       };
+       
+       menu.appendChild(item);
+       
+       // Add children recursively
+       if (category.children && category.children.length > 0) {
+           category.children.forEach(child => {
+               addCategoryWithChildren(child, level + 1);
+           });
+       }
+   }
+
+   // Start with top-level categories
+   categories.forEach(category => addCategoryWithChildren(category));
+   
+   select.onclick = function() {
+       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+   };
+}
+</script>
+
+<style>
+.category-dropdown {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+}
+
+.dropdown-select {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.dropdown-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+</style>
 
             <div class="form-group">
                 <label for="brand">Brand:</label>

@@ -6,7 +6,7 @@
         <div class="row align-items-center" 
                 style="border: 1px solid #ccc; border-radius: 15px; padding: 20px; background-color: #f8f9fa; ">
                 <div class="col-md-6">
-                    <h4 style="margin: 0; color: #343a40; font-weight: bold;">Edit Jasa</h4>
+                    <h4 style="margin: 0; color: #343a40; font-weight: bold;">Edit Product</h4>
                 </div>
             </div>
     @stop
@@ -489,347 +489,347 @@
 
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-        // Existing tags input initialization code...
-        
-        // Add event listeners for variation changes
-        document.getElementById('variation-type-1').addEventListener('input', generateVariationRows);
-        document.getElementById('variation-type-2').addEventListener('input', generateVariationRows);
-        document.getElementById('values-hidden-1').addEventListener('change', generateVariationRows);
-        document.getElementById('values-hidden-2').addEventListener('change', generateVariationRows);
+                    // Existing tags input initialization code...
+                    
+                    // Add event listeners for variation changes
+                    document.getElementById('variation-type-1').addEventListener('input', generateVariationRows);
+                    document.getElementById('variation-type-2').addEventListener('input', generateVariationRows);
+                    document.getElementById('values-hidden-1').addEventListener('change', generateVariationRows);
+                    document.getElementById('values-hidden-2').addEventListener('change', generateVariationRows);
 
-        // Initial generation of variation rows if has variations is checked
-        const hasVariationsCheckbox = document.getElementById('product-variations');
-        if (hasVariationsCheckbox.checked) {
-            generateVariationRows();
-        }
-
-        // Add listener for checkbox changes
-        hasVariationsCheckbox.addEventListener('change', function(e) {
-            const variationFields = document.getElementById('variation-fields');
-            const baseFields = document.getElementById('base-fields');
-            
-            variationFields.style.display = e.target.checked ? 'block' : 'none';
-            baseFields.style.display = e.target.checked ? 'none' : 'block';
-            
-            if (e.target.checked) {
-                generateVariationRows();
-            }
-        });
-
-        // Also trigger generation when hidden inputs change (when tags are added/removed)
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === "attributes" && mutation.attributeName === "value") {
-                    generateVariationRows();
-                }
-            });
-        });
-
-        // Observe both hidden inputs for changes
-        const hiddenInput1 = document.getElementById('values-hidden-1');
-        const hiddenInput2 = document.getElementById('values-hidden-2');
-        
-        observer.observe(hiddenInput1, { attributes: true });
-        observer.observe(hiddenInput2, { attributes: true });
-    });
-
-    // Define existing variations sekali saja di awal
-    const existingVariations = {!! ($variations && $variations->count() > 0) ? json_encode($variations->map(function($variation) {
-        return [
-            'id' => $variation->id,
-            'name' => $variation->name,
-            'price' => $variation->price,
-            'stock' => $variation->stock,
-            'msku' => $variation->msku,
-            'barcode' => $variation->barcode,
-            'variant_image_path' => $variation->variant_image_path
-        ];
-    })) : '[]' !!};
-
-    // Definisikan fungsi generateVariationRows sekali saja
-    function generateVariationRows() {
-        const tbody = document.getElementById('variations-body');
-        tbody.innerHTML = '';
-
-        // Get variation type names
-        const type1Name = document.getElementById('variation-type-1').value || '';
-        const type2Name = document.getElementById('variation-type-2').value || '';
-
-        // Get values from hidden inputs
-        const values1 = document.getElementById('values-hidden-1').value.split(',').filter(item => item.trim());
-        const values2 = document.getElementById('values-hidden-2').value.split(',').filter(item => item.trim());
-
-        // Generate combinations
-        let combinations = [];
-        if (values1.length && values2.length) {
-            values1.forEach(val1 => {
-                values2.forEach(val2 => {
-                    combinations.push({
-                        name: `${val1}/${val2}`,
-                        combinations: {
-                            [type1Name]: val1,
-                            [type2Name]: val2
-                        }
-                    });
-                });
-            });
-        } else if (values1.length || values2.length) {
-            const activeValues = values1.length ? values1 : values2;
-            const activeTypeName = values1.length ? type1Name : type2Name;
-            combinations = activeValues.map(val => ({
-                name: val,
-                combinations: {
-                    [activeTypeName]: val
-                }
-            }));
-        }
-
-        // Create rows
-        combinations.forEach((combination, index) => {
-            const existingVariation = existingVariations.find(v => v.name === combination.name);
-            
-            let imagesPreviewHtml = '';
-            if (existingVariation && existingVariation.variant_image_path) {
-                imagesPreviewHtml = `
-                    <div class="existing-image position-relative" style="margin: 2px;">
-                        <img src="/storage/${existingVariation.variant_image_path}" 
-                            alt="${combination.name}" 
-                            style="width: 50px; height: 50px; object-fit: cover;">
-                        <span class="remove-variation-image position-absolute top-0 end-0" 
-                            style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
-                            data-image-id="${existingVariation.id}">
-                            <i class="fas fa-times" style="font-size: 12px;"></i>
-                        </span>
-                        <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
-                    </div>
-                `;
-            }
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${combination.name}</td>
-                <td>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Rp</span>
-                        </div>
-                        <input type="number" 
-                            name="variations[${index}][price]" 
-                            class="form-control" 
-                            value="${existingVariation ? existingVariation.price : ''}"
-                            placeholder="Please Enter"
-                            required>
-                    </div>
-                </td>
-                <td>
-                    <input type="number" 
-                        name="variations[${index}][stock]" 
-                        class="form-control" 
-                        value="${existingVariation ? existingVariation.stock : ''}"
-                        placeholder="Should be between 0-999,999"
-                        required>
-                </td>
-                <td>
-                    <input type="text" 
-                        name="variations[${index}][msku]" 
-                        class="form-control" 
-                        value="${existingVariation ? existingVariation.msku : ''}"
-                        placeholder="Please Enter"
-                        required>
-                </td>
-                <td>
-                    <input type="text" 
-                        name="variations[${index}][barcode]" 
-                        class="form-control" 
-                        value="${existingVariation ? existingVariation.barcode : ''}"
-                        placeholder="Barcode only supports letters, numb..."
-                        required>
-                </td>
-
-                <td>
-                    <div class="variation-photo-section">
-                        <div class="image-upload-container">
-                            <!-- Upload New Image -->
-                            <label class="image-upload-box d-flex justify-content-center align-items-center" 
-                                style="width: 60px; height: 60px; border: 1px dashed #ccc; cursor: pointer;">
-                                <input type="file" 
-                                    class="variation-photos d-none" 
-                                    name="variations[${index}][photos]"
-                                    accept="image/*"
-                                    data-preview-id="preview-${index}"
-                                    data-variation-name="${combination.name}">
-                                <span class="plus-icon">+</span>
-                            </label>
-
-                            <!-- Images Preview Area -->
-                            <div class="variation-photos-preview mt-2" id="preview-${index}">
-                                ${existingVariation && existingVariation.variant_image_path ? `
-                                    <div class="existing-image position-relative d-inline-block me-2">
-                                        <img src="/storage/${existingVariation.variant_image_path}" 
-                                            alt="${combination.name}" 
-                                            style="width: 50px; height: 50px; object-fit: cover;">
-                                        <span class="remove-variation-image position-absolute top-0 end-0" 
-                                            style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
-                                            data-image-id="${existingVariation.id}">
-                                            <i class="fas fa-times" style="font-size: 12px;"></i>
-                                        </span>
-                                        <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </td>
-                <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
-                <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
-                ${existingVariation ? `<input type="hidden" name="variations[${index}][id]" value="${existingVariation.id}">` : ''}
-            `;
-            tbody.appendChild(row);
-        });
-        // Tambahkan di akhir fungsi generateVariationRows():
-
-        // Handle new image upload preview
-        document.querySelectorAll('.variation-photos').forEach(input => {
-            input.addEventListener('change', function(e) {
-                const previewId = this.getAttribute('data-preview-id');
-                const previewContainer = document.getElementById(previewId);
-                const file = this.files[0];
-
-                if (file) {
-                    // Hapus preview gambar baru sebelumnya (jika ada)
-                    const existingNewPreview = previewContainer.querySelector('.new-image-preview');
-                    if (existingNewPreview) {
-                        existingNewPreview.remove();
+                    // Initial generation of variation rows if has variations is checked
+                    const hasVariationsCheckbox = document.getElementById('product-variations');
+                    if (hasVariationsCheckbox.checked) {
+                        generateVariationRows();
                     }
 
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'new-image-preview position-relative d-inline-block me-2';
-                        previewDiv.innerHTML = `
-                            <img src="${e.target.result}" 
-                                alt="New Variation Image" 
-                                style="width: 50px; height: 50px; object-fit: cover;">
-                            <span class="remove-new-image position-absolute top-0 end-0" 
-                                style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;">
-                                <i class="fas fa-times" style="font-size: 12px;"></i>
-                            </span>
-                        `;
-                        previewContainer.appendChild(previewDiv);
+                    // Add listener for checkbox changes
+                    hasVariationsCheckbox.addEventListener('change', function(e) {
+                        const variationFields = document.getElementById('variation-fields');
+                        const baseFields = document.getElementById('base-fields');
+                        
+                        variationFields.style.display = e.target.checked ? 'block' : 'none';
+                        baseFields.style.display = e.target.checked ? 'none' : 'block';
+                        
+                        if (e.target.checked) {
+                            generateVariationRows();
+                        }
+                    });
 
-                        // Add event listener for removing new image preview
-                        previewDiv.querySelector('.remove-new-image').addEventListener('click', function() {
-                            previewDiv.remove();
-                            input.value = ''; // Clear the file input
+                    // Also trigger generation when hidden inputs change (when tags are added/removed)
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === "attributes" && mutation.attributeName === "value") {
+                                generateVariationRows();
+                            }
                         });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        });
-        
-        // Add event listeners for removing variation images
-        document.querySelectorAll('.remove-variation-image').forEach(button => {
-            button.addEventListener('click', function() {
-                const imageId = this.dataset.imageId;
-                const container = this.closest('.existing-image');
-                if (container) {
-                    // Add to removed images list
-                    const removedImagesInput = document.getElementById('removed-variation-images') || 
-                        document.createElement('input');
-                    removedImagesInput.type = 'hidden';
-                    removedImagesInput.id = 'removed-variation-images';
-                    removedImagesInput.name = 'removed_variation_images[]';
-                    removedImagesInput.value = imageId;
-                    document.querySelector('form').appendChild(removedImagesInput);
+                    });
+
+                    // Observe both hidden inputs for changes
+                    const hiddenInput1 = document.getElementById('values-hidden-1');
+                    const hiddenInput2 = document.getElementById('values-hidden-2');
                     
-                    // Remove the image container
-                    container.remove();
+                    observer.observe(hiddenInput1, { attributes: true });
+                    observer.observe(hiddenInput2, { attributes: true });
+                });
+
+                // Define existing variations sekali saja di awal
+                const existingVariations = {!! ($variations && $variations->count() > 0) ? json_encode($variations->map(function($variation) {
+                    return [
+                        'id' => $variation->id,
+                        'name' => $variation->name,
+                        'price' => $variation->price,
+                        'stock' => $variation->stock,
+                        'msku' => $variation->msku,
+                        'barcode' => $variation->barcode,
+                        'variant_image_path' => $variation->variant_image_path
+                    ];
+                })) : '[]' !!};
+
+                // Definisikan fungsi generateVariationRows sekali saja
+                function generateVariationRows() {
+                    const tbody = document.getElementById('variations-body');
+                    tbody.innerHTML = '';
+
+                    // Get variation type names
+                    const type1Name = document.getElementById('variation-type-1').value || '';
+                    const type2Name = document.getElementById('variation-type-2').value || '';
+
+                    // Get values from hidden inputs
+                    const values1 = document.getElementById('values-hidden-1').value.split(',').filter(item => item.trim());
+                    const values2 = document.getElementById('values-hidden-2').value.split(',').filter(item => item.trim());
+
+                    // Generate combinations
+                    let combinations = [];
+                    if (values1.length && values2.length) {
+                        values1.forEach(val1 => {
+                            values2.forEach(val2 => {
+                                combinations.push({
+                                    name: `${val1}/${val2}`,
+                                    combinations: {
+                                        [type1Name]: val1,
+                                        [type2Name]: val2
+                                    }
+                                });
+                            });
+                        });
+                    } else if (values1.length || values2.length) {
+                        const activeValues = values1.length ? values1 : values2;
+                        const activeTypeName = values1.length ? type1Name : type2Name;
+                        combinations = activeValues.map(val => ({
+                            name: val,
+                            combinations: {
+                                [activeTypeName]: val
+                            }
+                        }));
+                    }
+
+                    // Create rows
+                    combinations.forEach((combination, index) => {
+                        const existingVariation = existingVariations.find(v => v.name === combination.name);
+                        
+                        let imagesPreviewHtml = '';
+                        if (existingVariation && existingVariation.variant_image_path) {
+                            imagesPreviewHtml = `
+                                <div class="existing-image position-relative" style="margin: 2px;">
+                                    <img src="/storage/${existingVariation.variant_image_path}" 
+                                        alt="${combination.name}" 
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                    <span class="remove-variation-image position-absolute top-0 end-0" 
+                                        style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
+                                        data-image-id="${existingVariation.id}">
+                                        <i class="fas fa-times" style="font-size: 12px;"></i>
+                                    </span>
+                                    <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
+                                </div>
+                            `;
+                        }
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${combination.name}</td>
+                            <td>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp</span>
+                                    </div>
+                                    <input type="number" 
+                                        name="variations[${index}][price]" 
+                                        class="form-control" 
+                                        value="${existingVariation ? existingVariation.price : ''}"
+                                        placeholder="Please Enter"
+                                        required>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" 
+                                    name="variations[${index}][stock]" 
+                                    class="form-control" 
+                                    value="${existingVariation ? existingVariation.stock : ''}"
+                                    placeholder="Should be between 0-999,999"
+                                    required>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                    name="variations[${index}][msku]" 
+                                    class="form-control" 
+                                    value="${existingVariation ? existingVariation.msku : ''}"
+                                    placeholder="Please Enter"
+                                    required>
+                            </td>
+                            <td>
+                                <input type="text" 
+                                    name="variations[${index}][barcode]" 
+                                    class="form-control" 
+                                    value="${existingVariation ? existingVariation.barcode : ''}"
+                                    placeholder="Barcode only supports letters, numb..."
+                                    required>
+                            </td>
+
+                            <td>
+                                <div class="variation-photo-section">
+                                    <div class="image-upload-container">
+                                        <!-- Upload New Image -->
+                                        <label class="image-upload-box d-flex justify-content-center align-items-center" 
+                                            style="width: 60px; height: 60px; border: 1px dashed #ccc; cursor: pointer;">
+                                            <input type="file" 
+                                                class="variation-photos d-none" 
+                                                name="variations[${index}][photos]"
+                                                accept="image/*"
+                                                data-preview-id="preview-${index}"
+                                                data-variation-name="${combination.name}">
+                                            <span class="plus-icon">+</span>
+                                        </label>
+
+                                        <!-- Images Preview Area -->
+                                        <div class="variation-photos-preview mt-2" id="preview-${index}">
+                                            ${existingVariation && existingVariation.variant_image_path ? `
+                                                <div class="existing-image position-relative d-inline-block me-2">
+                                                    <img src="/storage/${existingVariation.variant_image_path}" 
+                                                        alt="${combination.name}" 
+                                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                                    <span class="remove-variation-image position-absolute top-0 end-0" 
+                                                        style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;"
+                                                        data-image-id="${existingVariation.id}">
+                                                        <i class="fas fa-times" style="font-size: 12px;"></i>
+                                                    </span>
+                                                    <input type="hidden" name="variations[${index}][existing_variant_image]" value="${existingVariation.variant_image_path}">
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <input type="hidden" name="variations[${index}][name]" value="${combination.name}">
+                            <input type="hidden" name="variations[${index}][combinations]" value='${JSON.stringify(combination.combinations)}'>
+                            ${existingVariation ? `<input type="hidden" name="variations[${index}][id]" value="${existingVariation.id}">` : ''}
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    // Tambahkan di akhir fungsi generateVariationRows():
+
+                    // Handle new image upload preview
+                    document.querySelectorAll('.variation-photos').forEach(input => {
+                        input.addEventListener('change', function(e) {
+                            const previewId = this.getAttribute('data-preview-id');
+                            const previewContainer = document.getElementById(previewId);
+                            const file = this.files[0];
+
+                            if (file) {
+                                // Hapus preview gambar baru sebelumnya (jika ada)
+                                const existingNewPreview = previewContainer.querySelector('.new-image-preview');
+                                if (existingNewPreview) {
+                                    existingNewPreview.remove();
+                                }
+
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const previewDiv = document.createElement('div');
+                                    previewDiv.className = 'new-image-preview position-relative d-inline-block me-2';
+                                    previewDiv.innerHTML = `
+                                        <img src="${e.target.result}" 
+                                            alt="New Variation Image" 
+                                            style="width: 50px; height: 50px; object-fit: cover;">
+                                        <span class="remove-new-image position-absolute top-0 end-0" 
+                                            style="cursor: pointer; background: rgba(255,255,255,0.8); border-radius: 50%; padding: 2px;">
+                                            <i class="fas fa-times" style="font-size: 12px;"></i>
+                                        </span>
+                                    `;
+                                    previewContainer.appendChild(previewDiv);
+
+                                    // Add event listener for removing new image preview
+                                    previewDiv.querySelector('.remove-new-image').addEventListener('click', function() {
+                                        previewDiv.remove();
+                                        input.value = ''; // Clear the file input
+                                    });
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        });
+                    });
+                    
+                    // Add event listeners for removing variation images
+                    document.querySelectorAll('.remove-variation-image').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const imageId = this.dataset.imageId;
+                            const container = this.closest('.existing-image');
+                            if (container) {
+                                // Add to removed images list
+                                const removedImagesInput = document.getElementById('removed-variation-images') || 
+                                    document.createElement('input');
+                                removedImagesInput.type = 'hidden';
+                                removedImagesInput.id = 'removed-variation-images';
+                                removedImagesInput.name = 'removed_variation_images[]';
+                                removedImagesInput.value = imageId;
+                                document.querySelector('form').appendChild(removedImagesInput);
+                                
+                                // Remove the image container
+                                container.remove();
+                            }
+                        });
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                const hasVariationsCheckbox = document.getElementById('product-variations');
+                const variationFields = document.getElementById('variation-fields');
+                const baseFields = document.getElementById('base-fields');
+                const variationsTable = document.getElementById('variations-table');
+                const variationsBody = document.getElementById('variations-body');
+                const baseTable = document.querySelector('#base-fields table');
+
+                // Reset variasi
+                function resetVariations() {
+                    // Reset variant type inputs
+                    document.getElementById('variation-type-1').value = '';
+                    document.getElementById('variation-type-2').value = '';
+                    
+                    // Reset hidden inputs untuk tag values
+                    document.getElementById('values-hidden-1').value = '';
+                    document.getElementById('values-hidden-2').value = '';
+                    
+                    // Reset tags containers
+                    document.getElementById('tags-container-1').innerHTML = '';
+                    document.getElementById('tags-container-2').innerHTML = '';
+                }
+
+                hasVariationsCheckbox.addEventListener('change', function(e) {
+                    if (e.target.checked) {
+                        // Tampilkan area variasi dan tabel variasi
+                        variationFields.style.display = 'block';
+                        variationsTable.style.display = 'table';
+                        
+                        // Sembunyikan area base dan tabel base
+                        baseFields.style.display = 'none';
+                        baseTable.style.display = 'none';
+                        
+                        // Jika sebelumnya tidak ada variasi, generate baris kosong
+                        if (variationsBody.innerHTML.trim() === '') {
+                            generateVariationRows();
+                        }
+                    } else {
+                        // Konfirmasi penghapusan variasi
+                        const confirmReset = confirm('Apakah Anda yakin ingin menghapus semua variasi?');
+                        
+                        if (confirmReset) {
+                            // Sembunyikan area variasi dan tabel variasi
+                            variationFields.style.display = 'none';
+                            variationsTable.style.display = 'none';
+                            
+                            // Tampilkan area base dan tabel base
+                            baseFields.style.display = 'block';
+                            baseTable.style.display = 'table';
+                            
+                            // Kosongkan baris variasi
+                            variationsBody.innerHTML = '';
+                            
+                            // Reset input variasi
+                            resetVariations();
+                        } else {
+                            // Jika dibatalkan, kembalikan checkbox ke state sebelumnya
+                            this.checked = true;
+                        }
+                    }
+                });
+
+                // Kondisi awal saat halaman dimuat
+                if (hasVariationsCheckbox.checked) {
+                    variationFields.style.display = 'block';
+                    variationsTable.style.display = 'table';
+                    baseFields.style.display = 'none';
+                    baseTable.style.display = 'none';
+                    
+                    // Generate baris variasi jika belum ada
+                    if (variationsBody.innerHTML.trim() === '') {
+                        generateVariationRows();
+                    }
+                } else {
+                    variationFields.style.display = 'none';
+                    variationsTable.style.display = 'none';
+                    baseFields.style.display = 'block';
+                    baseTable.style.display = 'table';
                 }
             });
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-    const hasVariationsCheckbox = document.getElementById('product-variations');
-    const variationFields = document.getElementById('variation-fields');
-    const baseFields = document.getElementById('base-fields');
-    const variationsTable = document.getElementById('variations-table');
-    const variationsBody = document.getElementById('variations-body');
-    const baseTable = document.querySelector('#base-fields table');
-
-    // Reset variasi
-    function resetVariations() {
-        // Reset variant type inputs
-        document.getElementById('variation-type-1').value = '';
-        document.getElementById('variation-type-2').value = '';
-        
-        // Reset hidden inputs untuk tag values
-        document.getElementById('values-hidden-1').value = '';
-        document.getElementById('values-hidden-2').value = '';
-        
-        // Reset tags containers
-        document.getElementById('tags-container-1').innerHTML = '';
-        document.getElementById('tags-container-2').innerHTML = '';
-    }
-
-    hasVariationsCheckbox.addEventListener('change', function(e) {
-        if (e.target.checked) {
-            // Tampilkan area variasi dan tabel variasi
-            variationFields.style.display = 'block';
-            variationsTable.style.display = 'table';
-            
-            // Sembunyikan area base dan tabel base
-            baseFields.style.display = 'none';
-            baseTable.style.display = 'none';
-            
-            // Jika sebelumnya tidak ada variasi, generate baris kosong
-            if (variationsBody.innerHTML.trim() === '') {
-                generateVariationRows();
-            }
-        } else {
-            // Konfirmasi penghapusan variasi
-            const confirmReset = confirm('Apakah Anda yakin ingin menghapus semua variasi?');
-            
-            if (confirmReset) {
-                // Sembunyikan area variasi dan tabel variasi
-                variationFields.style.display = 'none';
-                variationsTable.style.display = 'none';
-                
-                // Tampilkan area base dan tabel base
-                baseFields.style.display = 'block';
-                baseTable.style.display = 'table';
-                
-                // Kosongkan baris variasi
-                variationsBody.innerHTML = '';
-                
-                // Reset input variasi
-                resetVariations();
-            } else {
-                // Jika dibatalkan, kembalikan checkbox ke state sebelumnya
-                this.checked = true;
-            }
-        }
-    });
-
-    // Kondisi awal saat halaman dimuat
-    if (hasVariationsCheckbox.checked) {
-        variationFields.style.display = 'block';
-        variationsTable.style.display = 'table';
-        baseFields.style.display = 'none';
-        baseTable.style.display = 'none';
-        
-        // Generate baris variasi jika belum ada
-        if (variationsBody.innerHTML.trim() === '') {
-            generateVariationRows();
-        }
-    } else {
-        variationFields.style.display = 'none';
-        variationsTable.style.display = 'none';
-        baseFields.style.display = 'block';
-        baseTable.style.display = 'table';
-    }
-});
 
 
                 </script>
@@ -957,9 +957,181 @@
                     });
                 });
                 </script>
+                
+                <!-- Delivery Section -->
+                <div>
+                    <h5 style="font-weight: bold;">Delivery: (optional)</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="length">Panjang (cm):</label>
+                                <input type="number" name="length" id="length" class="form-control"
+                                    placeholder="Masukkan panjang" value="{{ $product->length }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="width">Lebar (cm):</label>
+                                <input type="number" name="width" id="width" class="form-control"
+                                    placeholder="Masukkan lebar" value="{{ $product->width }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="height">Tinggi (cm):</label>
+                                <input type="number" name="height" id="height" class="form-control"
+                                    placeholder="Masukkan tinggi" value="{{ $product->height }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="weight">Berat (g):</label>
+                                <input type="number" name="weight" id="weight" class="form-control"
+                                    placeholder="Masukkan berat" value="{{ $product->weight }}">
+                            </div>
+                        </div>
+                    </div>
+                    <label for="pre-order">Pre-Order:</label>
+                    <div>
+                        <label class="radio-inline">
+                            <input type="radio" name="is_preorder" value="1"
+                                {{ $product->is_preorder ? 'checked' : '' }}> Yes
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="is_preorder" value="0"
+                                {{ !$product->is_preorder ? 'checked' : '' }}> No
+                        </label>
+                    </div>
+                </div>
 
-                <!-- Button Simpan -->
-                <button type="submit" class="btn btn-primary mt-3" style="border-radius: 8px; width: 100%;">Simpan</button>
+                <!-- Customs Information Section -->
+                <h4 style="font-weight: bold;">Customs Information: (Optional)</h4>
+                <div id="customs-info">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="customs-chinese-name">Customs Chinese Name:</label>
+                                <input type="text" name="customs_chinese_name" id="customs-chinese-name"
+                                    class="form-control" placeholder="Please Enter" maxlength="200"
+                                    style="border-radius: 8px;" value="{{ $product->customs_chinese_name }}">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="customs-english-name">Customs English Name:</label>
+                                <input type="text" name="customs_english_name" id="customs-english-name"
+                                    class="form-control" placeholder="Please Enter" maxlength="200"
+                                    style="border-radius: 8px;" value="{{ $product->customs_english_name }}">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="hs-code">HS Code:</label>
+                                <input type="text" name="hs_code" id="hs-code" class="form-control"
+                                    placeholder="Please Enter" maxlength="200" style="border-radius: 8px;"
+                                    value="{{ $product->hs_code }}">
+                                <small>0/200</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="invoice-amount">Invoice Amount:</label>
+                                <input type="text" name="invoice_amount" id="invoice-amount" class="form-control"
+                                    placeholder="Please Enter" style="border-radius: 8px;"
+                                    value="{{ $product->invoice_amount }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="gross-weight">Gross Weight (g):</label>
+                                <input type="number" name="gross_weight" id="gross-weight" class="form-control"
+                                    placeholder="Please Enter" style="border-radius: 8px;"
+                                    value="{{ $product->gross_weight }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost Information Section -->
+                <h4 style="font-weight: bold;">Cost Information: (Optional)</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="source-url">Source URL:</label>
+                            <input type="text" name="source_url" id="source-url" class="form-control"
+                                placeholder="Please Enter" maxlength="150" style="border-radius: 8px;"
+                                value="{{ $product->source_url }}">
+                            <small>0/150</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="purchase-duration">Purchase Duration:</label>
+                            <input type="text" name="purchase_duration" id="purchase-duration" class="form-control"
+                                placeholder="Please Enter" style="border-radius: 8px;"
+                                value="{{ $product->purchase_duration }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="sales-tax-amount">Sales Tax Amount:</label>
+                            <input type="text" name="sales_tax_amount" id="sales-tax-amount" class="form-control"
+                                placeholder="Please Enter" style="border-radius: 8px;"
+                                value="{{ $product->sales_tax_amount }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Information Section -->
+                <h4 style="font-weight: bold;">Other Information:(Optional)</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks1">Remarks1:</label>
+                            <input type="text" name="remarks1" id="remarks1" class="form-control"
+                                placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50"
+                                style="border-radius: 8px;" value="{{ $product->remarks1 }}">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks2">Remarks2:</label>
+                            <input type="text" name="remarks2" id="remarks2" class="form-control"
+                                placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50"
+                                style="border-radius: 8px;" value="{{ $product->remarks2 }}">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="remarks3">Remarks3:</label>
+                            <input type="text" name="remarks3" id="remarks3" class="form-control"
+                                placeholder="1-50 digits of English, Chinese, numbers, spaces and - _ & %" maxlength="50"
+                                style="border-radius: 8px;" value="{{ $product->remarks3 }}">
+                            <small>0/50</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" style="border-radius: 8px;">
+                        <i class="fas fa-save mr-2"></i>Simpan
+                    </button>
+                    <a href="{{ route('products.index') }}" class="btn btn-secondary ml-2" style="border-radius: 8px;">
+                        <i class="fas fa-arrow-left mr-2"></i>Kembali
+                    </a>
+                </div>
         </div>
     @stop
 

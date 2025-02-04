@@ -51,6 +51,7 @@ class CreateProductsTable extends Migration
             $table->string('remarks3', 50)->nullable();
             $table->integer('sold_count')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('product_images', function (Blueprint $table) {

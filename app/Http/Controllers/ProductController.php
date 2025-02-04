@@ -5,22 +5,66 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\VariationType;
-use App\Models\VariationTypeValue; 
 use App\Models\ProductVariation;
 use App\Models\ProductImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class ProductController extends Controller
 {
    public function index()
    {
-       $products = Product::paginate(10);
-       $services = Service::all(); 
-       return view('products.product', compact('products', 'services'));
+        $products = Product::with('images', 'variations')->get();
+        $services = Service::all();
+        
+        // Fetch product categories
+        $productCategories = \App\Helpers\CategoryData::getProductCategories();
+        
+        // Fetch service categories
+        $serviceCategories = Service::distinct('kategori')->pluck('kategori');
+        
+        return view('products.product', [
+            'products' => $products,
+            'services' => $services,
+            'productCategories' => $productCategories,
+            'serviceCategories' => $serviceCategories
+        ]);
    }
+
+   public function getCategories()
+{
+    $request_host = 'https://api.ginee.com';
+    $request_uri = '/openapi/shop/v1/categories/list';
+    $http_method = 'GET';
+
+    $access_key = '012b0d457e602c6a';
+    $secret_key = 'cd9022ac983dcf4f';
+
+    $newline = '$';
+    $sign_str = $http_method . $newline . $request_uri . $newline;
+    $authorization = sprintf('%s:%s', $access_key, base64_encode(hash_hmac('sha256', $sign_str, $secret_key, TRUE)));
+
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => $authorization,
+            'Content-Type' => 'application/json',
+            'X-Advai-Country' => 'ID'
+        ])->get($request_host . $request_uri);
+
+        return response()->json([
+            'success' => true,
+            'data' => $response->json('data')
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
 
    public function create()
    {
@@ -511,11 +555,9 @@ class ProductController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Product updated successfully',
-                'data' => $product->load('variationTypes.values', 'variations', 'images')
-            ]);
+            // Redirect ke halaman products.product dengan pesan sukses
+            return redirect()->route('products.index')
+                ->with('success', 'Product updated successfully');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -523,10 +565,10 @@ class ProductController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error updating product: ' . $e->getMessage()
-            ], 422);
+
+            // Redirect kembali ke halaman sebelumnya dengan pesan error
+            return redirect()->back()
+                ->with('error', 'Error updating product: ' . $e->getMessage());
         }
     }
 

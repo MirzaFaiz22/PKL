@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\VariantOption;
-use App\Models\Variation;
+use App\Models\ProductImage;
+use App\Models\ProductVariation;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'name',
         'spu',
@@ -128,5 +130,25 @@ class Product extends Model
         }
         
         return $categoryPath;
+    }
+
+    // Misalnya dalam ProductController atau model Product
+    public function getFullCategoryNameAttribute()
+    {
+        if (!$this->fullCategoryId) {
+            return 'Unknown Category';
+        }
+
+        $categoryIds = is_string($this->fullCategoryId) 
+            ? json_decode($this->fullCategoryId, true) 
+            : $this->fullCategoryId;
+
+        $fullCategoryName = collect($categoryIds)
+            ->map(function($id) {
+                return \App\Helpers\CategoryData::findCategoryName($id);
+            })
+            ->implode(' > ');
+
+        return $fullCategoryName;
     }
 }
